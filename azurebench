@@ -1,0 +1,9 @@
+#!/bin/sh
+sln=DynaJson
+proj=Benchmark
+publish=$proj/bin/Release/netcoreapp2.1/publish
+results=$publish/BenchmarkDotNet.Artifacts
+ssh azure sudo sh -c "'mkdir /mnt/$sln; chown fujieda /mnt/$sln'"
+rsync -rtv $proj $sln.sln azure:/mnt/$sln
+ssh azure sudo sh -c "'cd /mnt/$sln/$publish; dotnet $proj.dll $@'"
+rsync -rtv azure:/mnt/$sln/$results/ $results

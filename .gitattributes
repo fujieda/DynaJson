@@ -1,1 +1,3 @@
 * text=auto
+*.json text eol=lf
+*.DotSettings eol=lf
