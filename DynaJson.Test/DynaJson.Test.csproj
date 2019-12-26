@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DynaJson\DynaJson.csproj" />
+    <ProjectReference Include="..\DynamicJson\DynamicJson.csproj" />
   </ItemGroup>
 
 </Project>

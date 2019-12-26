@@ -204,8 +204,8 @@ namespace DynaJson.Test
                     MissingMethodException
 #else
                     InvalidCastException
-                >(() =>
 #endif
+                >(() =>
                 {
                     var unused = (double[])DynaJson.Parse("{}");
                 });
