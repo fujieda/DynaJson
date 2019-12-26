@@ -4,7 +4,7 @@ A fast and compact drop-in replacement of DynamicJson
 
 This library is designed as a drop-in replacement of [DynamicJson](https://github.com/neuecc/DynamicJson).  You can intuitively manipulate JSON data through the dynamic type in the same way as DynamicJson. It is written from scratch and licensed under the MIT license instead of Ms-PL of DynamicJson.
 
-It can parse ten times faster and serialize four times faster than DynamicJson. It has no recursive call to process deeply nested JSON data. It has no extra dependency except for Microsoft.Csharp for .Net Standard, so you can reduce the package size of your applications.
+It can parse and serialize five times faster than DynamicJson. It has no recursive call to process deeply nested JSON data. It has no extra dependency except for Microsoft.Csharp for .Net Standard, so you can reduce the package size of your applications.
 
 ## Usage
 
@@ -148,7 +148,7 @@ var json2 = DynaJson.Serialize(foobar);
 
 DynaJson supports `Count` and `Length` methods to get the length of each array. They return the same value.
 
-It doesn't accept incomplete object notations such as `{"a":1,` and `{"a":1` while DynamicJson accepts. This behavior allows you to detect incomplete transfer.
+It doesn't accept incomplete object notations such as `{"a":1,` and `{"a":1` while DynamicJson accepts. This strictness allows you to detect incomplete transfer.
 
 In some cases, it throws different exceptions from what DynamicJson throws.
 
@@ -163,16 +163,26 @@ var e3 = DynaJson.Parse("[true]").a;
 
 ## Benchmark for large JSON strings
 
-The main usage of DynaJson (and DynamicJson) is processing large JSON strings. The first benchmark evaluates the performance of it.
+The primary usage of DynaJson (and DynamicJson) is processing large JSON strings. The first benchmark evaluates the performance of it.
 
 ### Libraries
 
 The following libraries support the dynamic type to access parsed JSON data. Utf8Json, however, doesn't provide dynamic property access like `json.foo`.
 
-- [Utf8Json](https://github.com/neuecc/Utf8Json) version 1.3.7
-- [Jil](https://github.com/kevin-montrose/Jil) version 2.17.0
-- [Newtonsoft.Json](https://www.newtonsoft.com/json) version 12.0.3
-- [DynamicJson](https://github.com/neuecc/DynamicJson) version 1.2.0
+Name                      |Version|Size (bytes)|
+--------------------------|-------|-----------:|
+DynaJson                  |1.0    |35,238      |
+[Utf8Json][Utf8Json]      |1.3.7  |237,568     |
+[Jil][Jil]                |2.17.0 |755,712     |
+[Newtonsoft.Json][Nt.Json]|12.0.3 |693,680     |
+[DynamicJson][DynamicJson]|1.2.0  |15,872      |
+
+<sub>The size of Jil includes indispensable Sigil's</sub>
+
+[Utf8Json]: https://github.com/neuecc/Utf8Json
+[Jil]: https://github.com/kevin-montrose/Jil
+[Nt.Json]: https://www.newtonsoft.com/json
+[DynamicJson]: https://github.com/neuecc/DynamicJson
 
 ### Sample JSON data
 
@@ -206,7 +216,7 @@ The benchmark program is in [the GitHub repository](https://github.com/fujieda/D
 
 #### Parse the original data sets
 
-The following result shows the time to parse each data sets except for citm_catalog.json.
+The following result shows the time to parse each data set except for citm_catalog.json.
 
 ![image](https://user-images.githubusercontent.com/345831/71397682-91eaf880-2661-11ea-86ca-ccacb5862ca7.png)
 
