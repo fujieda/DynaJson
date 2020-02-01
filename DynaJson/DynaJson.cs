@@ -6,8 +6,15 @@ namespace DynaJson
 {
     public class DynaJson: JsonObject
     {
-        private static JsonParser _parser = new JsonParser();
         public static int MaxDepth { get; set; } = 512;
+
+        public DynaJson()
+        {
+        }
+
+        public DynaJson(object obj) : base(obj)
+        {
+        }
 
         public static dynamic Parse(string json)
         {

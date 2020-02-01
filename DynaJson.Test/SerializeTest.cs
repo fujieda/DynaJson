@@ -91,7 +91,7 @@ namespace DynaJson.Test
         }
 
         [TestMethod]
-        public void CreateObjectAndSerialize()
+        public void CreateJsonObjectAndSerialize()
         {
             dynamic obj = new DynaJson();
             obj.a = "b";
@@ -99,12 +99,21 @@ namespace DynaJson.Test
         }
 
         [TestMethod]
-        public void CreateObjectWithEscapedKeyAndSerialize()
+        public void CreateJsonObjectWithEscapedKeyAndSerialize()
         {
             dynamic obj = new DynaJson();
             obj[@""""] = "b";
             var json = obj.ToString();
             Assert.AreEqual(@"{""\"""":""b""}", json);
+        }
+
+        [TestMethod]
+        public void CreateJsonObjectFromObjectAndSerialize()
+        {
+            dynamic obj = new DynaJson(new {a = "b"});
+            obj.b = 1;
+            var json = obj.ToString();
+            Assert.AreEqual(@"{""a"":""b"",""b"":1}", json);
         }
     }
 }

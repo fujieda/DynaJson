@@ -91,6 +91,11 @@ namespace DynaJson
             _data = obj;
         }
 
+        internal JsonObject(object obj)
+        {
+            _data = ConvertFrom.Convert(obj);
+        }
+
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
             result = null;
