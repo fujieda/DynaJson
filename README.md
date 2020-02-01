@@ -35,6 +35,9 @@ var a2 = json.nest.foobar; // true
 // The same as above
 var a3 = json["nest"]["foobar"]; // bracket notation
 
+// Assignment
+json.foo = "aaa";
+
 // Check the specified property exists
 var b1 = json.IsDefined("foo"); // true
 var b2 = json.IsDefined("foooo"); // false
@@ -48,6 +51,9 @@ var b4 = json.foooo(); // false
 ```csharp
 // Accessing array elements
 var a4 = json.bar[0]; // 100.0
+
+// Assignment
+json.bar[0] = 200;
 
 // Check array boundary
 var b5 = json.bar.IsDefined(1); // true
@@ -113,9 +119,9 @@ public class FooBar
     public string foo { get; set; }
     public int bar { get; set; }
 }
-var foobar1 = objectJson.Deserialize<FooBar>();
-var foobar2 = (FooBar)objectJson;
-FooBar foobar3 = objectJson;
+var foobar1 = objectJson.Deserialize<FooBar>(); // dynamic{FooBar}
+var foobar2 = (FooBar)objectJson; // Foobar
+FooBar foobar3 = objectJson; // the same above
 ```
 
 ### Serialize
