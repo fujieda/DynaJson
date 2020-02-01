@@ -5,6 +5,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace DynaJson.Test
 {
+#if DynamicJson
+    using DynaJson = Codeplex.Data.DynamicJson;
+#endif
     [TestClass]
     public class SerializeTest
     {
@@ -16,14 +19,15 @@ namespace DynaJson.Test
 
             var tos = obj.ToString();
             Assert.AreEqual(input, tos, "by ToString");
-
+#if !DynamicJson
             var sw = new StringWriter();
             obj.Serialize(sw);
             Assert.AreEqual(input, sw.ToString(), "by Serialize(TextWriter)");
 
-            // DynaJson.Serialize works the same as ToString for JsonObject
+            // the same as ToString for JsonObject
             var ser = DynaJson.Serialize(obj);
             Assert.AreEqual(input, ser, "by DynaJson.Serialize");
+#endif
         }
 
         [TestMethod]
@@ -98,6 +102,7 @@ namespace DynaJson.Test
             Assert.AreEqual(@"{""a"":""b""}", obj.ToString());
         }
 
+#if !DynamicJson
         [TestMethod]
         public void CreateJsonObjectWithEscapedKeyAndSerialize()
         {
@@ -115,5 +120,6 @@ namespace DynaJson.Test
             var json = obj.ToString();
             Assert.AreEqual(@"{""a"":""b"",""b"":1}", json);
         }
+#endif
     }
 }
