@@ -124,6 +124,19 @@ var foobar2 = (FooBar)objectJson; // Foobar
 FooBar foobar3 = objectJson; // the same above
 ```
 
+### Create Object and Serialize
+
+```csharp
+dynamic newJson1 = new DynaJson();
+newJson1.str = "aaa";
+newJson1.obj = new {foo = "bar"};
+var jsonStr1 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
+
+dynamic newJson2 = new DynaJson(new {str = "aaa"});
+newJson2.obj = new {foo = "bar"};
+var jsonStr2 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
+```
+
 ### Serialize
 
 ```csharp

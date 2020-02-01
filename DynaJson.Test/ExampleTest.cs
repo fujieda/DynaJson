@@ -122,6 +122,23 @@ namespace DynaJson.Test
         }
 
         [TestMethod]
+        public void CreateNewObject()
+        {
+            dynamic newJson1 = new DynaJson();
+            newJson1.str = "aaa";
+            newJson1.obj = new {foo = "bar"};
+            var jsonStr1 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
+            Assert.AreEqual(@"{""str"":""aaa"",""obj"":{""foo"":""bar""}}", jsonStr1);
+
+#if !DynamicJson
+            dynamic newJson2 = new DynaJson(new {str = "aaa"});
+            newJson2.obj = new {foo = "bar"};
+            var jsonStr2 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
+            Assert.AreEqual(jsonStr1, jsonStr2);
+#endif
+        }
+
+        [TestMethod]
         public void ReservedKeyword()
         {
             var reservedJson = DynaJson.Parse("{\"int\": 0, \"string\": \"foo\"}");
