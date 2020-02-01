@@ -31,6 +31,11 @@ namespace DynaJson
             return JsonParser.Parse(reader, MaxDepth);
         }
 
+        public static void Serialize(object obj, TextWriter writer)
+        {
+            Serializer.Serialize(obj, writer, MaxDepth);
+        }
+
         public static string Serialize(object obj)
         {
             var writer = new StringWriter();

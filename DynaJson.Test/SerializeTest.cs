@@ -38,6 +38,14 @@ namespace DynaJson.Test
         }
 
         [TestMethod]
+        public void SerializeObjectToTextWriter()
+        {
+            var sw = new StringWriter();
+            DynaJson.Serialize(new {a = 0, b = false}, sw);
+            Assert.AreEqual(@"{""a"":0,""b"":false}", sw.ToString());
+        }
+
+        [TestMethod]
         public void SerializeEmptyObject()
         {
             var json = DynaJson.Serialize(new { });
