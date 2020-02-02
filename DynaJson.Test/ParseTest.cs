@@ -7,9 +7,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace DynaJson.Test
 {
 #if DynamicJson
-    using DynaJson = Codeplex.Data.DynamicJson;
+    using JsonObject = Codeplex.Data.DynamicJson;
     using JsonParserException = Exception;
-
 #endif
     [TestClass]
     public class ParseTest
@@ -24,7 +23,7 @@ namespace DynaJson.Test
         [DataRow("1.1e10", 1.1e10d)]
         public void Number(string json, double expected)
         {
-            var result = DynaJson.Parse(json);
+            var result = JsonObject.Parse(json);
             Assert.AreEqual(expected, result);
         }
 
@@ -33,17 +32,17 @@ namespace DynaJson.Test
         [DataRow("-01", -1)]
         public void NumberWithLeadingZero(string json, double expected)
         {
-            var result = DynaJson.Parse(json);
+            var result = JsonObject.Parse(json);
             Assert.AreEqual(expected, result);
         }
 
         [TestMethod]
         public void TrailingComma()
         {
-            var array = DynaJson.Parse("[0,]");
+            var array = JsonObject.Parse("[0,]");
             Assert.AreEqual(0, array[0]);
 
-            var obj = DynaJson.Parse(@"{""a"":0,}");
+            var obj = JsonObject.Parse(@"{""a"":0,}");
             Assert.AreEqual(0, obj.a);
         }
 
@@ -54,14 +53,14 @@ namespace DynaJson.Test
         [DataRow(@"""0\t1\u59272""", "0\t1大2", "both of normal and escape characters")]
         public void String(string json, string expected, string message = null)
         {
-            var result = (string)DynaJson.Parse(json);
+            var result = (string)JsonObject.Parse(json);
             Assert.AreEqual(expected, result, message);
         }
 
         [TestMethod]
         public void WhiteSpace()
         {
-            var obj = DynaJson.Parse(" {\t\"a\"\r : \n\"b\"  , \"c\" : [ 0 , 1 ] } ");
+            var obj = JsonObject.Parse(" {\t\"a\"\r : \n\"b\"  , \"c\" : [ 0 , 1 ] } ");
             Assert.IsTrue(obj.IsObject);
         }
 
@@ -69,7 +68,7 @@ namespace DynaJson.Test
         public void LongJson()
         {
             var json = "[" + string.Join(",", Enumerable.Repeat('0', JsonParser.ReaderBufferSize / 2)) + "]";
-            var array = DynaJson.Parse(json);
+            var array = JsonObject.Parse(json);
             Assert.IsTrue(array.IsArray);
         }
 
@@ -79,7 +78,7 @@ namespace DynaJson.Test
             var json = "[" + string.Join(",", Enumerable.Repeat('0', JsonParser.ReaderBufferSize / 2)) + "]";
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
             {
-                var array = DynaJson.Parse(stream, Encoding.UTF8);
+                var array = JsonObject.Parse(stream, Encoding.UTF8);
                 Assert.IsTrue(array.IsArray);
             }
         }
@@ -94,7 +93,7 @@ namespace DynaJson.Test
             Array.Fill(zero, '0');
             sb.Append(zero);
             sb.Append('"');
-            var str = (string)DynaJson.Parse(sb.ToString());
+            var str = (string)JsonObject.Parse(sb.ToString());
             Assert.AreEqual(capacity + 1, str.Length);
         }
 
@@ -105,14 +104,14 @@ namespace DynaJson.Test
             public void Empty()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(""), "Unexpected end at 0");
+                    JsonObject.Parse(""), "Unexpected end at 0");
             }
 
             [TestMethod]
             public void InvalidChar()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                        DynaJson.Parse("a"),
+                        JsonObject.Parse("a"),
                     "Unexpected character 'a' at 0");
             }
 
@@ -125,14 +124,14 @@ namespace DynaJson.Test
             public void IncorrectToken(string json, string message)
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(json), message);
+                    JsonObject.Parse(json), message);
             }
 
             [TestMethod]
             public void InvalidEscapeCharacter()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                        DynaJson.Parse(@"""\a"""),
+                        JsonObject.Parse(@"""\a"""),
                     "Invalid escape character 'a' at 2");
             }
 
@@ -140,21 +139,21 @@ namespace DynaJson.Test
             public void InvalidUnicodeEscape()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(@"""\u123g"""));
+                    JsonObject.Parse(@"""\u123g"""));
             }
 
             [TestMethod]
             public void EscapeAtEnd()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(@"""\"""));
+                    JsonObject.Parse(@"""\"""));
             }
 
             [TestMethod]
             public void UnexpectedEnd()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                        DynaJson.Parse(@"""a"),
+                        JsonObject.Parse(@"""a"),
                     "Unexpected end at 2");
             }
 
@@ -162,7 +161,7 @@ namespace DynaJson.Test
             public void RawControlCharacter()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                        DynaJson.Parse("\"\b\""),
+                        JsonObject.Parse("\"\b\""),
                     "Unexpected character '\b' at 1");
             }
 
@@ -175,14 +174,14 @@ namespace DynaJson.Test
             public void NumberWithGarbage(string json, string message)
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(json), message);
+                    JsonObject.Parse(json), message);
             }
 
             [TestMethod]
             public void MissingColon()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                        DynaJson.Parse(@"{""at"",1}"),
+                        JsonObject.Parse(@"{""at"",1}"),
                     "Expecting ':' at 5");
             }
 
@@ -190,7 +189,7 @@ namespace DynaJson.Test
             public void DoubleColon()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                        DynaJson.Parse(@"{""at""::1}"),
+                        JsonObject.Parse(@"{""at""::1}"),
                     "Unexpected character ':' at 6");
             }
 
@@ -198,7 +197,7 @@ namespace DynaJson.Test
             public void MemberNameIsNotString()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                        DynaJson.Parse("{a:1}"),
+                        JsonObject.Parse("{a:1}"),
                     "Expecting string at 1");
             }
 
@@ -208,7 +207,7 @@ namespace DynaJson.Test
             {
 #if !DynamicJson
             Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(json),
+                    JsonObject.Parse(json),
                 "Expecting string at 7");
 #endif
             }
@@ -218,7 +217,7 @@ namespace DynaJson.Test
             {
 #if !DynamicJson
             Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(@"{""a"":1"),
+                    JsonObject.Parse(@"{""a"":1"),
                 "Expecting ',' or '}' at 6");
 #endif
             }
@@ -228,14 +227,14 @@ namespace DynaJson.Test
             public void MissingValueInArray(string json, string message)
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(json), message);
+                    JsonObject.Parse(json), message);
             }
 
             [TestMethod]
             public void ColonInsteadOfComma()
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                        DynaJson.Parse("[1:"),
+                        JsonObject.Parse("[1:"),
                     "Expecting ',' or ']' at 2");
             }
 
@@ -245,7 +244,7 @@ namespace DynaJson.Test
             public void DoubleComma(string json, string message)
             {
                 Assert.That.Throws<JsonParserException>(() =>
-                    DynaJson.Parse(json), message);
+                    JsonObject.Parse(json), message);
             }
 
             [TestMethod]
@@ -275,7 +274,7 @@ namespace DynaJson.Test
             {
                 Assert.That.Throws<JsonParserException>(() =>
                 {
-                    var unused = DynaJson.Parse(bracket);
+                    var unused = JsonObject.Parse(bracket);
                 }, $"Unexpected character '{bracket}' at 0");
             }
         }

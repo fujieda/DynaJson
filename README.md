@@ -19,7 +19,7 @@ A part of the following examples is borrowed from DynamicJson.
 ### Parsing
 
 ```csharp
-var json = DynaJson.Parse(@"{
+var json = JsonObject.Parse(@"{
     ""foo"": ""json"",
     ""bar"": [100,200],
     ""nest"": {""foobar"": true}
@@ -93,13 +93,13 @@ var len = json.Arr.Length; // 0 (DynaJson only)
 ### Enumerate
 
 ```csharp
-var arrayJson = DynaJson.Parse("[1,2,3]")
+var arrayJson = JsonObject.Parse("[1,2,3]")
 var sum = 0;
 // 6
 foreach (int item in arrayJson)
     sum += item;
 
-var objectJson = DynaJson.Parse(@"{""foo"":""json"",""bar"":100}");
+var objectJson = JsonObject.Parse(@"{""foo"":""json"",""bar"":100}");
 var list = new List<string>();
 // ["foo:json","bar:100"]
 foreach (KeyValuePair<string, dynamic> item in objectJson)
@@ -127,12 +127,12 @@ FooBar foobar3 = objectJson; // the same above
 ### Create Object and Serialize
 
 ```csharp
-dynamic newJson1 = new DynaJson();
+dynamic newJson1 = new JsonObject();
 newJson1.str = "aaa";
 newJson1.obj = new {foo = "bar"};
 var jsonStr1 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
 
-dynamic newJson2 = new DynaJson(new {str = "aaa"});
+dynamic newJson2 = new JsonObject(new {str = "aaa"});
 newJson2.obj = new {foo = "bar"};
 var jsonStr2 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
 ```
@@ -152,7 +152,7 @@ var obj = new
     Like = new[] {"Microsoft", "XBox"}
 };
 // {"Name":"Foo","Age":30,"Address":{"Country":"Japan","City":"Tokyo"},"Like":["Microsoft","XBox"]}
-var json1 = DynaJson.Serialize(obj);
+var json1 = JsonObject.Serialize(obj);
 
 var foobar = new[]
 {
@@ -160,7 +160,7 @@ var foobar = new[]
     new FooBar {foo = "orz", bar = 10}
 };
 // [{"foo":"fooooo!","bar":1000},{"foo":"orz","bar":10}]
-var json2 = DynaJson.Serialize(foobar);
+var json2 = JsonObject.Serialize(foobar);
 ```
 
 ## Incompatibility with DynamicJson
@@ -173,11 +173,11 @@ In some cases, it throws different exceptions from what DynamicJson throws.
 
 ```csharp
 // InvalidCastException instead of IndexOutOfRangeException
-var e1 = (bool)DynaJson.Parse("[]");
+var e1 = (bool)JsonObject.Parse("[]");
 // InvalidCastException instead of MissingMethodException
-var e2 = (double[])DynaJson.Parse("{}");
+var e2 = (double[])JsonObject.Parse("{}");
 // RuntimeBinderException instead of FormatException
-var e3 = DynaJson.Parse("[true]").a;
+var e3 = JsonObject.Parse("[true]").a;
 ```
 
 ## Benchmark for large JSON strings

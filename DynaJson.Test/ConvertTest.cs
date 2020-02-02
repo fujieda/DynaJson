@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace DynaJson.Test
 {
 #if DynamicJson
-    using DynaJson = Codeplex.Data.DynamicJson;
+    using JsonObject = Codeplex.Data.DynamicJson;
 #endif
 
     [TestClass]
@@ -17,78 +17,78 @@ namespace DynaJson.Test
         [TestMethod]
         public void ConvertToArray()
         {
-            var bArray = (bool[])DynaJson.Parse("[false]");
+            var bArray = (bool[])JsonObject.Parse("[false]");
             Assert.IsFalse(bArray[0]);
 
-            var sArray = (string[])DynaJson.Parse(@"[""a""]");
+            var sArray = (string[])JsonObject.Parse(@"[""a""]");
             Assert.AreEqual("a", sArray[0]);
         }
 
         [TestMethod]
         public void ConvertToList()
         {
-            var list = (List<string>)DynaJson.Parse(@"[""a""]");
+            var list = (List<string>)JsonObject.Parse(@"[""a""]");
             Assert.AreEqual("a", list[0]);
         }
 
         [TestMethod]
         public void ConvertBetweenConvertibleTypes()
         {
-            var bArray = (bool[])DynaJson.Parse("[0]");
+            var bArray = (bool[])JsonObject.Parse("[0]");
             Assert.IsFalse(bArray[0]);
 
-            var sArray = (string[])DynaJson.Parse("[0]");
+            var sArray = (string[])JsonObject.Parse("[0]");
             Assert.AreEqual("0", sArray[0]);
 
-            var dArray = (double[])DynaJson.Parse(@"[""0""]");
+            var dArray = (double[])JsonObject.Parse(@"[""0""]");
             Assert.AreEqual(0, dArray[0]);
         }
 
         [TestMethod]
         public void ConvertToArrayOfInt()
         {
-            var array = (int[])DynaJson.Parse("[0]");
+            var array = (int[])JsonObject.Parse("[0]");
             Assert.AreEqual(0, array[0]);
         }
 
         [TestMethod]
         public void ConvertToListOfInt()
         {
-            var list = (List<int>)DynaJson.Parse("[0]");
+            var list = (List<int>)JsonObject.Parse("[0]");
             Assert.AreEqual(0, list[0]);
         }
 
         [TestMethod]
         public void ConvertMixedArrayToArray()
         {
-            var array = (double[])DynaJson.Parse("[0,true]");
+            var array = (double[])JsonObject.Parse("[0,true]");
             Assert.AreEqual(1d, array[1]);
         }
 
         [TestMethod]
         public void ConvertToArrayOfObject()
         {
-            var array = (dynamic[])DynaJson.Parse(@"[{""a"":0},{""a"":1}]");
+            var array = (dynamic[])JsonObject.Parse(@"[{""a"":0},{""a"":1}]");
             Assert.AreEqual(1d, array[1].a);
         }
 
         [TestMethod]
         public void ConvertToNestedArray()
         {
-            var array = (double[][])DynaJson.Parse("[[0,1],[2,3]]");
+            var array = (double[][])JsonObject.Parse("[[0,1],[2,3]]");
             Assert.AreEqual(3d, array[1][1]);
         }
 
         [TestMethod]
         public void ConvertNull()
         {
-            var objArray = (object[])DynaJson.Parse("[null]");
+            var objArray = (object[])JsonObject.Parse("[null]");
             Assert.AreEqual(null, objArray[0]);
 
-            var strArray = (string[])DynaJson.Parse("[null]");
+            var strArray = (string[])JsonObject.Parse("[null]");
             Assert.AreEqual(null, strArray[0]);
 
-            var nested = (object[][])DynaJson.Parse("[null]");
+            var nested = (object[][])JsonObject.Parse("[null]");
             Assert.AreEqual(null, nested[0]);
         }
 
@@ -107,28 +107,28 @@ namespace DynaJson.Test
         [TestMethod]
         public void ConvertToUserDefinedType()
         {
-            var obj = (A)DynaJson.Parse(@"{""S"":""a""}");
+            var obj = (A)JsonObject.Parse(@"{""S"":""a""}");
             Assert.AreEqual("a", obj.S);
         }
 
         [TestMethod]
         public void ConvertToEmptyObject()
         {
-            var obj = (Empty)DynaJson.Parse(@"{""S"":""a""}");
+            var obj = (Empty)JsonObject.Parse(@"{""S"":""a""}");
             Assert.IsInstanceOfType(obj, typeof(Empty));
         }
 
         [TestMethod]
         public void ConvertEmptyToUserDefinedType()
         {
-            var obj = (A)DynaJson.Parse(@"{}");
+            var obj = (A)JsonObject.Parse(@"{}");
             Assert.IsInstanceOfType(obj, typeof(A));
         }
 
         [TestMethod]
         public void ConvertByDeserializeMethod()
         {
-            var array = DynaJson.Parse("[0,1]");
+            var array = JsonObject.Parse("[0,1]");
 
             Assert.AreEqual(1d, array.Deserialize<double[]>()[1]);
         }
@@ -139,7 +139,7 @@ namespace DynaJson.Test
             const string json = "[0,1]";
             var expected = new[] {0d, 1d};
 
-            IEnumerable array = DynaJson.Parse(json); // must be implicit conversion
+            IEnumerable array = JsonObject.Parse(json); // must be implicit conversion
             Assert.That.SequenceEqual(expected, array.Cast<double>());
         }
 
@@ -150,7 +150,7 @@ namespace DynaJson.Test
             var expected = new[] {0d, 1d};
 
             var list = new List<double>();
-            foreach (double num in DynaJson.Parse(json))
+            foreach (double num in JsonObject.Parse(json))
                 list.Add(num);
             Assert.That.SequenceEqual(expected, list);
         }
@@ -161,7 +161,7 @@ namespace DynaJson.Test
             const string json = @"{""a"":0,""b"":""c""}";
             var expected = new[] {"a:0", "b:c"};
 
-            IEnumerable obj = DynaJson.Parse(json); // must be implicit conversion
+            IEnumerable obj = JsonObject.Parse(json); // must be implicit conversion
             var list = obj.Cast<KeyValuePair<string, dynamic>>().Select(entry => entry.Key + ":" + entry.Value);
             Assert.That.SequenceEqual(expected, list);
         }
@@ -173,7 +173,7 @@ namespace DynaJson.Test
             var expected = new[] {0d, 1d};
 
             var list = new List<double>();
-            foreach (KeyValuePair<string, dynamic> entry in DynaJson.Parse(json))
+            foreach (KeyValuePair<string, dynamic> entry in JsonObject.Parse(json))
                 list.Add((double)entry.Value);
             Assert.That.SequenceEqual(expected, list);
         }
@@ -192,7 +192,7 @@ namespace DynaJson.Test
 #endif
                 >(() =>
                 {
-                    var unused = (bool)DynaJson.Parse("[]");
+                    var unused = (bool)JsonObject.Parse("[]");
                 });
             }
 
@@ -207,7 +207,7 @@ namespace DynaJson.Test
 #endif
                 >(() =>
                 {
-                    var unused = (double[])DynaJson.Parse("{}");
+                    var unused = (double[])JsonObject.Parse("{}");
                 });
             }
 
@@ -216,12 +216,12 @@ namespace DynaJson.Test
             {
                 Assert.That.Throws<InvalidCastException>(() =>
                 {
-                    var unused = (bool[])DynaJson.Parse("[null]");
+                    var unused = (bool[])JsonObject.Parse("[null]");
                 });
 
                 Assert.That.Throws<InvalidCastException>(() =>
                 {
-                    var unused = (double[])DynaJson.Parse("[null]");
+                    var unused = (double[])JsonObject.Parse("[null]");
                 });
             }
 
@@ -232,7 +232,7 @@ namespace DynaJson.Test
 #if DynamicJson
                 Assert.That.Throws<MissingMethodException>(() =>
                 {
-                    var unused = (DBNull)DynaJson.Parse("{}");
+                    var unused = (DBNull)JsonObject.Parse("{}");
                 });
 #endif
             }
@@ -242,7 +242,7 @@ namespace DynaJson.Test
             {
                 Assert.That.Throws<InvalidCastException>(() =>
                 {
-                    var unused = (double[][])DynaJson.Parse("[0,1]");
+                    var unused = (double[][])JsonObject.Parse("[0,1]");
                 });
             }
 
@@ -251,7 +251,7 @@ namespace DynaJson.Test
             {
                 Assert.That.Throws<RuntimeBinderException>(() =>
                 {
-                    IEnumerable<double> unused = DynaJson.Parse("0");
+                    IEnumerable<double> unused = JsonObject.Parse("0");
                 });
             }
 
@@ -260,7 +260,7 @@ namespace DynaJson.Test
             {
                 Assert.That.Throws<RuntimeBinderException>(() =>
                 {
-                    IEnumerable unused = DynaJson.Parse("0");
+                    IEnumerable unused = JsonObject.Parse("0");
                 });
             }
         }

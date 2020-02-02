@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace DynaJson.Test
 {
 #if DynamicJson
-    using DynaJson = Codeplex.Data.DynamicJson;
+    using JsonObject = Codeplex.Data.DynamicJson;
 #endif
     [TestClass]
     public class ParseAndOperateTest
@@ -13,65 +13,65 @@ namespace DynaJson.Test
         [TestMethod]
         public void PrimitiveValues()
         {
-            var @null = DynaJson.Parse("null");
+            var @null = JsonObject.Parse("null");
             Assert.AreEqual(null, @null);
 
-            var @bool = DynaJson.Parse("true");
+            var @bool = JsonObject.Parse("true");
             Assert.AreEqual(typeof(bool), @bool.GetType());
 
-            var number = DynaJson.Parse("0");
+            var number = JsonObject.Parse("0");
             Assert.AreEqual(typeof(double), number.GetType());
 
-            var @string = DynaJson.Parse(@"""a""");
+            var @string = JsonObject.Parse(@"""a""");
             Assert.AreEqual(typeof(string), @string.GetType());
         }
 
         [TestMethod]
         public void GetArrayElement()
         {
-            var array = DynaJson.Parse("[0,1]");
+            var array = JsonObject.Parse("[0,1]");
             Assert.AreEqual(1, array[1]);
         }
 
         [TestMethod]
         public void GetObjectProperty()
         {
-            var obj = DynaJson.Parse(@"{""a"":0}");
+            var obj = JsonObject.Parse(@"{""a"":0}");
             Assert.AreEqual(0, obj.a);
         }
 
         [TestMethod]
         public void GetObjectPropertyByGetIndex()
         {
-            var obj = DynaJson.Parse(@"{""a"":0}");
+            var obj = JsonObject.Parse(@"{""a"":0}");
             Assert.AreEqual(0, obj["a"]);
         }
 
         [TestMethod]
         public void GetObjectPropertyOfDuplicateKey()
         {
-            var obj = DynaJson.Parse(@"{""a"":true,""a"":false}");
+            var obj = JsonObject.Parse(@"{""a"":true,""a"":false}");
             Assert.IsTrue(obj.a);
         }
 
         [TestMethod]
         public void GetNestedObjectProperty()
         {
-            var obj = DynaJson.Parse(@"{""a"":{""b"":0}}");
+            var obj = JsonObject.Parse(@"{""a"":{""b"":0}}");
             Assert.AreEqual(0, obj.a.b);
         }
 
         [TestMethod]
         public void GetNestedObjectPropertyByGetIndex()
         {
-            var obj = DynaJson.Parse(@"{""a"":{""b"":0}}");
+            var obj = JsonObject.Parse(@"{""a"":{""b"":0}}");
             Assert.AreEqual(0, obj["a"]["b"]);
         }
 
         [TestMethod]
         public void CheckObjectProperty()
         {
-            var obj = DynaJson.Parse(@"{""a"":0}");
+            var obj = JsonObject.Parse(@"{""a"":0}");
             Assert.IsTrue(obj.a());
             Assert.IsTrue(obj.IsDefined("a"));
         }
@@ -79,7 +79,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void CheckObjectPropertyOfEmptyObject()
         {
-            var obj = DynaJson.Parse("{}");
+            var obj = JsonObject.Parse("{}");
             Assert.IsFalse(obj.a());
             Assert.IsFalse(obj.IsDefined("a"));
         }
@@ -87,7 +87,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void CheckArrayBoundary()
         {
-            var array = DynaJson.Parse("[0]");
+            var array = JsonObject.Parse("[0]");
             Assert.IsTrue(array.IsDefined(0));
             Assert.IsFalse(array.IsDefined(1));
         }
@@ -96,7 +96,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void GetArrayLength()
         {
-            var array = DynaJson.Parse("[0]");
+            var array = JsonObject.Parse("[0]");
             Assert.AreEqual(1, array.Length);
             Assert.AreEqual(1, array.Count);
         }
@@ -105,7 +105,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void SetObjectProperty()
         {
-            var obj = DynaJson.Parse("{}");
+            var obj = JsonObject.Parse("{}");
             obj.a = "a";
             Assert.AreEqual(obj.a, "a");
         }
@@ -113,7 +113,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void SetObjectPropertyWithArray()
         {
-            var obj = DynaJson.Parse("{}");
+            var obj = JsonObject.Parse("{}");
             obj.bar = new[] {0, 1};
             Assert.AreEqual(1, obj.bar[1]);
         }
@@ -121,7 +121,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void SetArrayElementBySetIndex()
         {
-            var array = DynaJson.Parse("[0]");
+            var array = JsonObject.Parse("[0]");
             array[0] = 1;
             Assert.AreEqual(1, array[0]);
         }
@@ -129,7 +129,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void SetIndexOutOfBounds()
         {
-            var array = DynaJson.Parse("[]");
+            var array = JsonObject.Parse("[]");
             array[1] = 0; // append element
             Assert.AreEqual(0, array[0]);
             array[3] = 1;
@@ -139,7 +139,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void SetObjectPropertyBySetIndex()
         {
-            var obj = DynaJson.Parse("{}");
+            var obj = JsonObject.Parse("{}");
             obj["a"] = "a";
             Assert.AreEqual(obj.a, "a");
         }
@@ -147,7 +147,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void DeleteProperty()
         {
-            var obj = DynaJson.Parse(@"{""a"":0}");
+            var obj = JsonObject.Parse(@"{""a"":0}");
             Assert.IsTrue(obj.Delete("a"));
             Assert.IsFalse(obj.Delete("a"));
         }
@@ -155,7 +155,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void DeletePropertyByInvoke()
         {
-            var obj = DynaJson.Parse(@"{""a"":""0""}");
+            var obj = JsonObject.Parse(@"{""a"":""0""}");
             Assert.IsTrue(obj("a"));
             Assert.IsFalse(obj("a"));
         }
@@ -163,7 +163,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void DeletePropertyByInvokeMember()
         {
-            var obj = DynaJson.Parse(@"{""a"":{""b"":0}}");
+            var obj = JsonObject.Parse(@"{""a"":{""b"":0}}");
             Assert.IsTrue(obj.a("b"));
             Assert.IsFalse(obj.a("b"));
         }
@@ -171,7 +171,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void DeleteArrayElement()
         {
-            var array = DynaJson.Parse("[0,1]");
+            var array = JsonObject.Parse("[0,1]");
             Assert.IsTrue(array.Delete(0));
             Assert.AreEqual(1, array[0]);
         }
@@ -179,21 +179,21 @@ namespace DynaJson.Test
         [TestMethod]
         public void DeleteArrayElementOutOfLength()
         {
-            var array = DynaJson.Parse("[]");
+            var array = JsonObject.Parse("[]");
             Assert.IsFalse(array.Delete(0));
         }
 
         [TestMethod]
         public void DeletePropertyAgainstArray()
         {
-            var array = DynaJson.Parse("[]");
+            var array = JsonObject.Parse("[]");
             Assert.IsFalse(array.Delete("a"));
         }
 
         [TestMethod]
         public void DeleteArrayElementByInvoke()
         {
-            var array = DynaJson.Parse("[0,1]");
+            var array = JsonObject.Parse("[0,1]");
             Assert.IsTrue(array(0));
             Assert.AreEqual(1, array[0]);
         }
@@ -204,7 +204,7 @@ namespace DynaJson.Test
             [TestMethod]
             public void GetIndexOutOfRangeError()
             {
-                var array = DynaJson.Parse("[]");
+                var array = JsonObject.Parse("[]");
                 Assert.That.Throws<
 #if !DynamicJson
                     IndexOutOfRangeException
@@ -220,7 +220,7 @@ namespace DynaJson.Test
             [TestMethod]
             public void GetMissingPropertyError()
             {
-                dynamic obj = new DynaJson();
+                dynamic obj = new JsonObject();
                 Assert.That.Throws<RuntimeBinderException>(() =>
                 {
                     var unused = obj.a;
@@ -231,18 +231,18 @@ namespace DynaJson.Test
             [TestMethod]
             public void GetLengthOfObjectError()
             {
-                dynamic obj = new DynaJson();
+                dynamic obj = new JsonObject();
                 Assert.That.Throws<RuntimeBinderException>(() =>
                 {
                     var unused = obj.Length;
-                }, "'DynaJson.JsonObject' does not contain a definition for 'Length'");
+                }, "'JsonObject' does not contain a definition for 'Length'");
             }
 #endif
 
             [TestMethod]
             public void SetIndexToPrimitiveError()
             {
-                var array = DynaJson.Parse("[true]");
+                var array = JsonObject.Parse("[true]");
                 Assert.That.Throws<RuntimeBinderException>(() =>
                 {
                     array[0][0] = 0;
@@ -252,7 +252,7 @@ namespace DynaJson.Test
             [TestMethod]
             public void GetPropertyOfArrayError()
             {
-                var array = DynaJson.Parse("[]");
+                var array = JsonObject.Parse("[]");
                 Assert.That.Throws<
 #if DynamicJson
                     FormatException
@@ -268,7 +268,7 @@ namespace DynaJson.Test
             [TestMethod]
             public void SetPropertyOfArrayError()
             {
-                var array = DynaJson.Parse("[]");
+                var array = JsonObject.Parse("[]");
                 Assert.That.Throws<
 #if DynamicJson
                     FormatException

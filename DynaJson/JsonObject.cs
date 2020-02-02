@@ -25,7 +25,7 @@ namespace DynaJson
             return IsArray
                 ? _data.Array.Count
                 : throw new RuntimeBinderException(
-                    $"'DynaJson.JsonObject' does not contain a definition for '{caller}'");
+                    $"'JsonObject' does not contain a definition for '{caller}'");
         }
 
         public bool IsDefined(string key)
@@ -60,7 +60,7 @@ namespace DynaJson
 
         public void Serialize(TextWriter writer)
         {
-            Serialize(writer, DynaJson.MaxDepth);
+            Serialize(writer, MaxDepth);
         }
 
         public void Serialize(TextWriter writer, int maxDepth)
@@ -70,7 +70,7 @@ namespace DynaJson
 
         public override string ToString()
         {
-            return ToString(DynaJson.MaxDepth);
+            return ToString(MaxDepth);
         }
 
         public string ToString(int maxDepth)
@@ -80,7 +80,7 @@ namespace DynaJson
             return writer.ToString();
         }
 
-        internal JsonObject()
+        public JsonObject()
         {
             _data.Type = JsonType.Object;
             _data.Dictionary = new JsonDictionary();
@@ -91,7 +91,7 @@ namespace DynaJson
             _data = obj;
         }
 
-        internal JsonObject(object obj)
+        public JsonObject(object obj)
         {
             _data = ConvertFrom.Convert(obj);
         }

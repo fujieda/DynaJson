@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace DynaJson.Test
 {
 #if DynamicJson
-    using DynaJson = Codeplex.Data.DynamicJson;
+    using JsonObject = Codeplex.Data.DynamicJson;
 #endif
     [TestClass]
     public class ExampleTest
@@ -16,8 +16,8 @@ namespace DynaJson.Test
         [TestInitialize]
         public void Initialize()
         {
-            // Parse (from a JSON string to DynaJson)
-            json = DynaJson.Parse(@"{
+            // Parse (from a JSON string to JsonObject)
+            json = JsonObject.Parse(@"{
                     ""foo"": ""json"",
                     ""bar"": [100,200],
                     ""nest"": {
@@ -124,14 +124,14 @@ namespace DynaJson.Test
         [TestMethod]
         public void CreateNewObject()
         {
-            dynamic newJson1 = new DynaJson();
+            dynamic newJson1 = new JsonObject();
             newJson1.str = "aaa";
             newJson1.obj = new {foo = "bar"};
             var jsonStr1 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
             Assert.AreEqual(@"{""str"":""aaa"",""obj"":{""foo"":""bar""}}", jsonStr1);
 
 #if !DynamicJson
-            dynamic newJson2 = new DynaJson(new {str = "aaa"});
+            dynamic newJson2 = new JsonObject(new {str = "aaa"});
             newJson2.obj = new {foo = "bar"};
             var jsonStr2 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
             Assert.AreEqual(jsonStr1, jsonStr2);
@@ -141,7 +141,7 @@ namespace DynaJson.Test
         [TestMethod]
         public void ReservedKeyword()
         {
-            var reservedJson = DynaJson.Parse("{\"int\": 0, \"string\": \"foo\"}");
+            var reservedJson = JsonObject.Parse("{\"int\": 0, \"string\": \"foo\"}");
             Assert.AreEqual(0.0, reservedJson.@int);
             Assert.AreEqual("foo", reservedJson.@string);
         }
@@ -149,14 +149,14 @@ namespace DynaJson.Test
         [TestMethod]
         public void Enumerate()
         {
-            var arrayJson = DynaJson.Parse("[1,2,3]");
+            var arrayJson = JsonObject.Parse("[1,2,3]");
             var sum = 0;
             foreach (int item in arrayJson)
                 sum += item;
             Assert.AreEqual(6, sum);
             Assert.AreEqual(6, ((int[])arrayJson).Sum());
 
-            var objectJson = DynaJson.Parse(@"{""foo"":""json"",""bar"":100}");
+            var objectJson = JsonObject.Parse(@"{""foo"":""json"",""bar"":100}");
             var list = new List<string>();
             foreach (KeyValuePair<string, dynamic> item in objectJson)
                 list.Add(item.Key + ":" + item.Value); // ["foo:json", "bar:100"]
@@ -189,8 +189,8 @@ namespace DynaJson.Test
         [TestMethod]
         public void ConvertTypes()
         {
-            var arrayJson = DynaJson.Parse("[1,2,3]");
-            var objectJson = DynaJson.Parse(@"{""foo"":""json"",""bar"":100}");
+            var arrayJson = JsonObject.Parse("[1,2,3]");
+            var objectJson = JsonObject.Parse(@"{""foo"":""json"",""bar"":100}");
 
             var array1 = arrayJson.Deserialize<int[]>(); // dynamic{int[]}
             Assert.AreEqual(typeof(int[]), array1.GetType());
@@ -229,7 +229,7 @@ namespace DynaJson.Test
                 Like = new[] {"Microsoft", "XBox"}
             };
             // {"Name":"Foo","Age":30,"Address":{"Country":"Japan","City":"Tokyo"},"Like":["Microsoft","XBox"]}
-            var json1 = DynaJson.Serialize(obj);
+            var json1 = JsonObject.Serialize(obj);
             Assert.AreEqual(
                 @"{""Name"":""Foo"",""Age"":30,""Address"":{""Country"":""Japan"",""City"":""Tokyo""},""Like"":[""Microsoft"",""XBox""]}",
                 json1);
@@ -240,7 +240,7 @@ namespace DynaJson.Test
                 new FooBar {foo = "fooooo!", bar = 1000},
                 new FooBar {foo = "orz", bar = 10}
             };
-            var json2 = DynaJson.Serialize(foobar);
+            var json2 = JsonObject.Serialize(foobar);
             Assert.AreEqual(@"[{""foo"":""fooooo!"",""bar"":1000},{""foo"":""orz"",""bar"":10}]", json2);
         }
     }

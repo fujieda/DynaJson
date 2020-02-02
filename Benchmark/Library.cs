@@ -45,7 +45,7 @@ namespace Benchmark
             new LibraryConfig
             {
                 Name = "DynaJson",
-                ParseDynamic = DynaJson.DynaJson.Parse,
+                ParseDynamic = DynaJson.JsonObject.Parse,
                 SerializeDynamic = obj => obj.ToString(),
                 Serialize = GetMethod("DynaJsonSerialize"),
                 Deserialize = GetMethod("DynaJsonDeserialize")
@@ -92,12 +92,12 @@ namespace Benchmark
         // ReSharper disable UnusedMember.Global
         public static string DynaJsonSerialize<T>(T obj)
         {
-            return DynaJson.DynaJson.Serialize(obj);
+            return DynaJson.JsonObject.Serialize(obj);
         }
 
         public static T DynaJsonDeserialize<T>(string json)
         {
-            return (T)DynaJson.DynaJson.Parse(json);
+            return (T)DynaJson.JsonObject.Parse(json);
         }
 
         public static string Utf8JsonSerialize<T>(T obj)

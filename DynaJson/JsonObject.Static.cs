@@ -1,20 +1,11 @@
 ﻿using System.IO;
 using System.Text;
-// ReSharper disable MemberCanBePrivate.Global
 
 namespace DynaJson
 {
-    public class DynaJson: JsonObject
+    public partial class JsonObject
     {
         public static int MaxDepth { get; set; } = 512;
-
-        public DynaJson()
-        {
-        }
-
-        public DynaJson(object obj) : base(obj)
-        {
-        }
 
         public static dynamic Parse(string json)
         {
