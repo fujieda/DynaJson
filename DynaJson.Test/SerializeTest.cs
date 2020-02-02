@@ -37,6 +37,7 @@ namespace DynaJson.Test
             Assert.AreEqual(@"{""a"":0,""b"":false}", json);
         }
 
+#if !DynamicJson
         [TestMethod]
         public void SerializeObjectToTextWriter()
         {
@@ -44,6 +45,7 @@ namespace DynaJson.Test
             DynaJson.Serialize(new {a = 0, b = false}, sw);
             Assert.AreEqual(@"{""a"":0,""b"":false}", sw.ToString());
         }
+#endif
 
         [TestMethod]
         public void SerializeEmptyObject()
