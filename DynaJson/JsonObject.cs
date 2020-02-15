@@ -195,12 +195,12 @@ namespace DynaJson
 
     internal enum JsonType : uint
     {
-        Null = 0xfff00001, // Use NaN boxing
-        True = 0xfff00002,
-        False = 0xfff00003,
-        String = 0xfff00004,
-        Array = 0xfff00005,
-        Object = 0xfff00006
+        Null = 0xfff80001, // Use NaN boxing
+        True = 0xfff80002,
+        False = 0xfff80003,
+        String = 0xfff80004,
+        Array = 0xfff80005,
+        Object = 0xfff80006
     }
 
     [StructLayout(LayoutKind.Explicit)]
