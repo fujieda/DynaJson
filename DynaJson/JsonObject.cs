@@ -12,7 +12,7 @@ namespace DynaJson
     {
         private readonly InternalObject _data;
 
-        public bool IsArray => _data.IsArray;
+        public bool IsArray => _data.Type == JsonType.Array;
 
         public bool IsObject => !IsArray;
 
@@ -211,7 +211,5 @@ namespace DynaJson
         [FieldOffset(8)] public string String;
         [FieldOffset(8)] public JsonArray Array;
         [FieldOffset(8)] public JsonDictionary Dictionary;
-
-        public bool IsArray => Type == JsonType.Array;
     }
 }

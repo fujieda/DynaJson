@@ -194,7 +194,7 @@ namespace DynaJson
 
         private static object ConvertToIEnumerable(InternalObject obj)
         {
-            return obj.IsArray
+            return obj.Type == JsonType.Array
                 ? (object)obj.Array.GetEnumerator().GetEnumerable().Select(ToValue)
                 : obj.Dictionary.GetEnumerator().GetEnumerable().ToDictionary(x => x.Key, x => ToValue(x.Value));
         }
