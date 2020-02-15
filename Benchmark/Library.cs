@@ -33,14 +33,19 @@ namespace Benchmark
             }
         }
 
-        private static HashSet<string> _filter = new HashSet<string>(new[] {"all"});
+        public static IEnumerable<string> Filter { get; set; }
 
-        public static IEnumerable<string> Filter
+        public static IEnumerable<string> LibraryNames =>
+            from cfg in Configs where Filter.Contains("all") || Filter.Contains(cfg.Name.ToLower()) select cfg.Name;
+
+        public static IEnumerable<LibraryConfig> Libraries => LibraryNames.Select(GetConfig);
+
+        public static LibraryConfig GetConfig(string name)
         {
-            set { _filter = new HashSet<string>(value.Select(name => name.ToLower())); }
+            return Configs.First(c => c.Name == name);
         }
 
-        public static IEnumerable<LibraryConfig> Libraries => new[]
+        private static readonly IEnumerable<LibraryConfig> Configs = new[]
         {
             new LibraryConfig
             {
@@ -82,7 +87,7 @@ namespace Benchmark
                 Serialize = GetMethod("DynamicJsonSerialize"),
                 Deserialize = GetMethod("DynamicJsonDeserialize")
             }
-        }.Where(lib => _filter.Contains("all") || _filter.Contains(lib.Name.ToLower()));
+        };
 
         private static MethodInfo GetMethod(string name)
         {

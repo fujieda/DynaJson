@@ -28,64 +28,79 @@ namespace Benchmark
         [Config(typeof(BenchmarkConfig))]
         public class Dynamic
         {
-            public IEnumerable<DataSet.DataSetConfig> DataSets => Benchmark.DataSet.DataSets;
+            public IEnumerable<string> JsonNames => DataSet.JsonNames;
 
-            public IEnumerable<Library.LibraryConfig> Libraries => Benchmark.Library.Libraries;
+            public IEnumerable<string> LibraryNames => Library.LibraryNames;
 
-            [ParamsSource(nameof(Libraries))]
-            public Library.LibraryConfig Library { get; set; }
+            [ParamsSource(nameof(LibraryNames))]
+            public string LibraryName { get; set; }
 
-            [ParamsSource(nameof(DataSets))]
-            public DataSet.DataSetConfig DataSet { get; set; }
+            [ParamsSource(nameof(JsonNames))]
+            public string JsonName { get; set; }
+
+            private string _string;
+            private Func<string, object> _parseDynamic;
+
+            [GlobalSetup(Target = nameof(Parse))]
+            public void ParseSetup()
+            {
+                _string = DataSet.ReadFile(JsonName);
+                _parseDynamic = Library.GetConfig(LibraryName).ParseDynamic;
+            }
 
             [Benchmark]
             public void Parse()
             {
-                Library.ParseDynamic(DataSet.JsonString);
+                _parseDynamic(_string);
             }
 
             private object _object;
+            private Func<object, string> _serializeDynamic;
 
             [GlobalSetup(Target = nameof(Serialize))]
-            public void SetObject()
+            public void SerializeSetup()
             {
-                _object = Library.ParseDynamic(DataSet.JsonString);
+                _object = Library.GetConfig(LibraryName).ParseDynamic(DataSet.ReadFile(JsonName));
+                _serializeDynamic = Library.GetConfig(LibraryName).SerializeDynamic;
             }
 
             [Benchmark]
             public void Serialize()
             {
-                Library.SerializeDynamic(_object);
+                _serializeDynamic(_object);
             }
         }
 
         [Config(typeof(BenchmarkConfig))]
         public class Static
         {
-            public IEnumerable<TargetObjectConfig> TargetObjects => Benchmark.TargetObject.TargetObjects;
+            public IEnumerable<string> TargetNames => TargetObject.TargetNames;
 
-            public IEnumerable<Library.LibraryConfig> Libraries => Benchmark.Library.Libraries;
+            public IEnumerable<string> LibraryNames => Library.LibraryNames;
 
-            [ParamsSource(nameof(Libraries))]
-            public Library.LibraryConfig Library { get; set; }
+            [ParamsSource(nameof(LibraryNames))]
+            public string LibraryName { get; set; }
 
-            [ParamsSource(nameof(TargetObjects))]
-            public TargetObjectConfig TargetObject { get; set; }
+            [ParamsSource(nameof(TargetNames))]
+            public string TargetName { get; set; }
 
             private Func<string> _serializer;
             private Func<object> _deserializer;
 
             [GlobalSetup(Target = nameof(Serialize))]
-            public void SetupSerialize()
+            public void SerializeSetup()
             {
-                _serializer = Library.CreateSerializeDelegate(TargetObject.Target);
+                var target = TargetObject.GetConfig(TargetName).Target;
+                _serializer = Library.GetConfig(LibraryName).CreateSerializeDelegate(target);
             }
 
             [GlobalSetup(Target = nameof(Deserialize))]
-            public void SetupDeserialize()
+            public void DeserializeSetup()
             {
-                var jsonString = Library.CreateSerializeDelegate(TargetObject.Target)();
-                _deserializer = Library.CreateDeserializeDelegate(TargetObject.Target.GetType(), jsonString);
+                var conf = Library.GetConfig(LibraryName);
+                var target = TargetObject.GetConfig(TargetName).Target;
+                var jsonString = conf.CreateSerializeDelegate(target)();
+                _deserializer = conf.CreateDeserializeDelegate(target.GetType(), jsonString);
             }
 
             [Benchmark]

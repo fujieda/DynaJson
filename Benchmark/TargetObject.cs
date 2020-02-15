@@ -6,12 +6,30 @@ namespace Benchmark
 {
     public static class TargetObject
     {
-        public static IEnumerable<string> Filter { get; set; } = new[] {"all"};
+        public class TargetObjectConfig
+        {
+            public string Name;
+            public object Target;
 
-        public static IEnumerable<TargetObjectConfig> TargetObjects => InitialTargetObjects
-            .Where(target => Filter.Contains("all") || Filter.Contains(target.Name.ToLower()));
+            public override string ToString()
+            {
+                return Name;
+            }
+        }
 
-        private static readonly TargetObjectConfig[] InitialTargetObjects =
+        public static IEnumerable<string> Filter { get; set; }
+
+        public static IEnumerable<string> TargetNames =>
+            from cfg in Configs where Filter.Contains("all") || Filter.Contains(cfg.Name.ToLower()) select cfg.Name;
+
+        public static IEnumerable<TargetObjectConfig> TargetObjects => TargetNames.Select(GetConfig);
+
+        public static TargetObjectConfig GetConfig(string name)
+        {
+            return Configs.First(c => c.Name == name);
+        }
+
+        private static readonly TargetObjectConfig[] Configs =
         {
             new TargetObjectConfig
             {
@@ -34,17 +52,6 @@ namespace Benchmark
                 Target = SimpleObject.CreateNested()
             }
         };
-    }
-
-    public class TargetObjectConfig
-    {
-        public string Name;
-        public object Target;
-
-        public override string ToString()
-        {
-            return Name;
-        }
     }
 
     public static class SimpleObject

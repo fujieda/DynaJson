@@ -59,7 +59,7 @@ namespace Benchmark
                 if (opt.Benchmark == "dotnet")
                 {
                     BenchmarkConfig.Filter = opt.Methods;
-                    var config = ManualConfig.Create(DefaultConfig.Instance).With(StringToJob(opt.Job));
+                    var config = DefaultConfig.Instance.With(StringToJob(opt.Job));
                     if (opt.Type == "dynamic" || opt.Type == "all")
                         BenchmarkRunner.Run(typeof(BenchmarkDotNet.Dynamic), config);
                     if (opt.Type == "static" || opt.Type == "all")

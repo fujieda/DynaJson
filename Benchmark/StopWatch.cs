@@ -38,18 +38,19 @@ namespace Benchmark
                     RepeatCount = DefaultRepeatCount;
                 var sw = new Stopwatch();
 
-                foreach (var set in DataSet.DataSets)
+                foreach (var name in DataSet.JsonNames)
                 {
+                    var jsonString = DataSet.ReadFile(name);
                     if (Methods.Contains("parse") || Methods.Contains("all"))
                     {
-                        Console.Out.WriteLine("Parse: " + set.Name);
+                        Console.Out.WriteLine("Parse: " + name);
                         foreach (var library in Library.Libraries)
                         {
                             GC.Collect(2, GCCollectionMode.Forced, true);
                             sw.Restart();
                             for (var i = 0; i < RepeatCount; i++)
                             {
-                                var unused = library.ParseDynamic(set.JsonString);
+                                var unused = library.ParseDynamic(jsonString);
                             }
                             sw.Stop();
                             Console.Out.WriteLine(
@@ -58,10 +59,10 @@ namespace Benchmark
                     }
                     if (Methods.Contains("serialize") || Methods.Contains("all"))
                     {
-                        Console.Out.WriteLine("Serialize: " + set.Name);
+                        Console.Out.WriteLine("Serialize: " + name);
                         foreach (var library in Library.Libraries)
                         {
-                            var obj = library.ParseDynamic(set.JsonString);
+                            var obj = library.ParseDynamic(jsonString);
                             GC.Collect(2, GCCollectionMode.Forced, true);
                             sw.Restart();
                             for (var i = 0; i < RepeatCount; i++)
