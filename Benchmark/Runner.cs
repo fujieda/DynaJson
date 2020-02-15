@@ -22,7 +22,7 @@ namespace Benchmark
             public IEnumerable<string> Methods { get; set; }
 
             [Option('j', "job", SetName = "dotnet", Default = "default",
-                HelpText = "Job for BenchmarkDotNet (default|dry|short|medium|long)")]
+                HelpText = "Job for BenchmarkDotNet (default|dry|short|medium|long|verylong)")]
             public string Job { get; set; }
 
             [Option('c', "count", SetName = "stopwatch")]
@@ -84,6 +84,9 @@ namespace Benchmark
                     break;
                 case "long":
                     job = Job.LongRun;
+                    break;
+                case "verylong":
+                    job = Job.VeryLongRun;
                     break;
             }
             return job;
