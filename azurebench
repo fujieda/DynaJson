@@ -1,9 +1,14 @@
 #!/bin/sh
+user=fujieda
+host=$1
+shift
 sln=DynaJson
-proj=Benchmark
-publish=$proj/bin/Release/netcoreapp2.1/publish
+bench=Benchmark
+publish=$bench/bin/Release/netcoreapp3.1/publish
+libs="DynaJson DynamicJson"
 results=$publish/BenchmarkDotNet.Artifacts
-ssh azure sudo sh -c "'mkdir /mnt/$sln; chown fujieda /mnt/$sln'"
-rsync -rtv $proj $sln.sln azure:/mnt/$sln
-ssh azure sudo sh -c "'cd /mnt/$sln/$publish; dotnet $proj.dll $@'"
-rsync -rtv azure:/mnt/$sln/$results/ $results
+top=/mnt/$sln
+ssh $host sudo sh -c "'if [ ! -d $top ]; then mkdir $top; chown -R $user $top; fi'"
+rsync -rtv --exclude BenchmarkDotNet.Artifacts $bench $libs $sln.sln $host:/mnt/$sln
+ssh $host sudo sh -c "'cd /mnt/$sln/$publish; dotnet $bench.dll $@'"
+rsync -rtv $host:/mnt/$sln/$results/ $results
