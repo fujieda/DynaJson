@@ -1,5 +1,7 @@
-﻿using System.Dynamic;
+﻿using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.CSharp.RuntimeBinder;
@@ -170,6 +172,13 @@ namespace DynaJson
         {
             result = ConvertTo.Convert(_data, binder.Type);
             return true;
+        }
+
+        public override IEnumerable<string> GetDynamicMemberNames()
+        {
+            return IsArray
+                ? Enumerable.Range(0, _data.Array.Count).Select(i => i.ToString())
+                : _data.Dictionary.GetEnumerator().GetEnumerable().Select(kv => kv.Key);
         }
 
         internal static object ToValue(InternalObject obj)

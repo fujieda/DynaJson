@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -196,6 +197,20 @@ namespace DynaJson.Test
             var array = JsonObject.Parse("[0,1]");
             Assert.IsTrue(array(0));
             Assert.AreEqual(1, array[0]);
+        }
+
+        [TestMethod]
+        public void GetDynamicMemberNamesForArray()
+        {
+            var array = JsonObject.Parse("[3,2]");
+            Assert.That.SequenceEqual(new[]{"0","1"}, (IEnumerable<string>)array.GetDynamicMemberNames());
+        }
+
+        [TestMethod]
+        public void GetDynamicMemberNamesForObject()
+        {
+            var array = JsonObject.Parse(@"{""a"":0,""b"":1}");
+            Assert.That.SequenceEqual(new[] { "a", "b" }, (IEnumerable<string>)array.GetDynamicMemberNames());
         }
 
         [TestClass]
