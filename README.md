@@ -2,19 +2,19 @@
 
 A fast and compact drop-in replacement of DynamicJson
 
-This library is designed as a drop-in replacement of [DynamicJson](https://github.com/neuecc/DynamicJson).  You can intuitively manipulate JSON data through the dynamic type in the same way as DynamicJson. It is written from scratch and licensed under the MIT license instead of Ms-PL of DynamicJson.
+DynaJson is designed as a drop-in replacement of [DynamicJson](https://github.com/neuecc/DynamicJson).  You can intuitively manipulate JSON data through the dynamic type in the same way as DynamicJson. It is written from scratch and licensed under the MIT license instead of Ms-PL of DynamicJson.
 
-It can parse and serialize five times faster than DynamicJson. It has no recursive call to process deeply nested JSON data. It has no extra dependency except for Microsoft.Csharp for .Net Standard, so you can reduce the package size of your applications.
+DynaJson can parse and serialize five times faster than DynamicJson. It has no recursive call to process deeply nested JSON data and no extra dependency except for Microsoft.CSharp for .Net Standard to reduce the package size of your applications.
 
 ## Usage
 
-This library is available on NuGet for .NET Standard 2.0 or .NET Framework 4.5.1 or later.
+DynaJson is available on NuGet for .NET Standard 2.0 and .NET Framework 4.5.1.
 
 ```
 PM> Install-Package DynaJson
 ```
 
-A part of the following examples is borrowed from DynamicJson.
+The following examples are borrowed from DynamicJson.
 
 ### Parsing
 
@@ -165,11 +165,11 @@ var json2 = JsonObject.Serialize(foobar);
 
 ## Incompatibility with DynamicJson
 
-DynaJson supports `Count` and `Length` methods to get the length of each array. They return the same value.
+DynaJson supports `Count` and `Length` methods to get the length of each array. Both return the same value.
 
-It doesn't accept incomplete object notations such as `{"a":1,` and `{"a":1` while DynamicJson accepts. This strictness allows you to detect incomplete transfer.
+It does not accept incomplete object notations such as `{"a":1,` and `{"a":1` while DynamicJson accepts. This strictness allows you to detect incomplete transfer.
 
-In some cases, it throws different exceptions from what DynamicJson throws.
+In some cases, it throws exceptions different from what DynamicJson throws.
 
 ```csharp
 // InvalidCastException instead of IndexOutOfRangeException
@@ -182,15 +182,15 @@ var e3 = JsonObject.Parse("[true]").a;
 
 ## Benchmark for large JSON strings
 
-The primary usage of DynaJson (and DynamicJson) is processing large JSON strings. The first benchmark evaluates the performance of it.
+The primary usage of DynaJson (and DynamicJson) is processing large JSON strings. So the first benchmark evaluates the performance of it.
 
-### Libraries
+### Target libraries
 
-The following libraries support the dynamic type to access parsed JSON data. Utf8Json, however, doesn't provide dynamic property access like `json.foo`.
+The following libraries support the dynamic type to access parsed JSON data. Utf8Json, however, does not provide dynamic property access like `json.foo`.
 
 Name                      |Version|Size (bytes)|
 --------------------------|-------|-----------:|
-DynaJson                  |1.0    |35,238      |
+DynaJson                  |2.1    |35,238      |
 [Utf8Json][Utf8Json]      |1.3.7  |237,568     |
 [Jil][Jil]                |2.17.0 |755,712     |
 [Newtonsoft.Json][Nt.Json]|12.0.3 |693,680     |
@@ -203,58 +203,59 @@ DynaJson                  |1.0    |35,238      |
 [Nt.Json]: https://www.newtonsoft.com/json
 [DynamicJson]: https://github.com/neuecc/DynamicJson
 
-### Sample JSON data
+### Target JSON files
 
 - currency.json (179 KB)
 
-    It is a simple JSON of the result of [Foreign exchange rates API with currency conversion](https://exchangeratesapi.io/) against [the request](https://api.exchangeratesapi.io/history?start_at=2017-08-01&end_at=2018-12-31) for currency data since 2017-08-01 until 2018-12-31.
+    The result of [Foreign exchange rates API with currency conversion](https://exchangeratesapi.io/) against [the request](https://api.exchangeratesapi.io/history?start_at=2017-08-01&end_at=2018-12-31) for currency data from 2017-08-01 until 2018-12-31.
 
 - geojson.json (178 KB)
 
-    It is GeoJSON data on [Bicycle and Pedestrian On Road Bike Facilities GIS Data](https://catalog.data.gov/dataset/bicycle-and-pedestrian-facilities-gis-data) consisting mainly of coordinates (arrays with 2 numbers).
+    A GeoJSON on [Bicycle and Pedestrian On Road Bike Facilities GIS Data](https://catalog.data.gov/dataset/bicycle-and-pedestrian-facilities-gis-data) consisting mainly of coordinates (arrays with two numbers).
+
+- riot-games.json (185 KB)
+
+    Seven sets of match data in [League of Legends](https://na.leagueoflegends.com/) of an online battle game. It is part of the seed data for [the Riot Games API](https://developer.riotgames.com/). It has a complicated data structure.
+
+- twitter.json (174 KB)
+
+    The Twitter search API result against the query `一` (the character of "one" in Japanese and Chinese). It is a raw data differently from [twitter.json](https://github.com/miloyip/nativejson-benchmark/blob/master/data/twitter.json) in [Native JSON Benchmark](https://github.com/miloyip/nativejson-benchmark/).
 
 - github.json (177 KB)
 
     The result of [the GitHub API to search repositories](https://developer.github.com/v3/search/#search-repositories) against the query `topic:ruby+topic:rails`. It is pretty printed.
 
-- twitter.json (174 KB)
-
-    It is the result of the Twitter search API against the query `一` (the character of "one" in Japanese and Chinese). It is similar to [twitter.json](https://github.com/miloyip/nativejson-benchmark/blob/master/data/twitter.json) in [Native JSON Benchmark](https://github.com/miloyip/nativejson-benchmark/), but it is raw data with many escaped Unicode characters.
-
-- riot-games.json (185 KB)
-
-    It includes seven sets of match data of [League of Legends](https://na.leagueoflegends.com/) of an online battle game. It is a part of the seed data for [the Riot Games API](https://developer.riotgames.com/). It has a complicated data structure.
-
 - citm_catalog.json (1.7 MB)
 
-    It is the JSON file most widely used for benchmarks of various JSON parsers. We borrow it from [Native JSON Benchmark](https://github.com/miloyip/nativejson-benchmark/). It is pretty printed.
+   The JSON file used most widely to benchmark JSON parsers. We borrow it from [Native JSON Benchmark](https://github.com/miloyip/nativejson-benchmark/). It is pretty printed.
 
 ### Results
 
-The benchmark program is in [the GitHub repository](https://github.com/fujieda/DynaJson/Benchmark/).
+The benchmark program in [the GitHub repository](https://github.com/fujieda/DynaJson/Benchmark/) generated the following results on Standard D2ds_v4 in Microsoft Azure.
 
-#### Parse the original data sets
+#### Parse the original JSON files
 
-The following result shows the time to parse each data set except for citm_catalog.json.
+The following result shows the time to parse each JSON file except for citm_catalog.json.
 
-![image](https://user-images.githubusercontent.com/345831/71397682-91eaf880-2661-11ea-86ca-ccacb5862ca7.png)
+![benchmark-dynamic-parse2](https://user-images.githubusercontent.com/345831/95461724-89c23680-09b1-11eb-8785-d342013609c0.png)
+
+DynaJson is considerably faster than other parsers.
 
 #### Serialize back
 
-The following shows the time to serialize each parsed JSON data back to its string. It evaluates the throughput of each serializer.
+The following shows the time to serialize each result of parsing back to its string representation. It evaluates the throughput of serializing large objects.
 
-![image](https://user-images.githubusercontent.com/345831/71397896-23f30100-2662-11ea-9f8c-3ec539b6d47e.png)
-
+![benchmark-dynamic-serialize2](https://user-images.githubusercontent.com/345831/95464859-68fbe000-09b5-11eb-9db2-8e293723ab16.png)
 
 DynaJson is the fastest partially because it can serialize only the dynamic objects generated by its parser and provides no customization of string representations.
 
 #### Parse and serialize back citm_catalog.json
 
-![image](https://user-images.githubusercontent.com/345831/71398482-e5f6dc80-2663-11ea-9bd1-63bef9e84046.png)
+![benchmakr-dynamic-citm](https://user-images.githubusercontent.com/345831/95582675-ed159c80-0a75-11eb-84df-d8ad89bd65f8.png)
 
 ## Benchmark for user-defined types
 
-DynaJson can serialize and deserialize only its own dynamic objects. It can, however, convert between them and the values of user-defined types. When DynaJson serializes a value, it has to convert this to a dynamic object at first. Although it has an inherent overhead, the performance is comparable to others.
+DynaJson can serialize and deserialize only its own dynamic objects. It, however, has a converter between dynamic objects and values of user-defined types. When DynaJson serializes a value, it converts this to a dynamic object first. Although it has an inherent overhead, the performance is comparable to others.
 
 ### User-defined types
 
@@ -287,11 +288,11 @@ DynaJson can serialize and deserialize only its own dynamic objects. It can, how
 
 #### Serialize
 
-![image](https://user-images.githubusercontent.com/345831/71347837-8e4a6980-25ae-11ea-9caa-e3d4667293a0.png)
+![benchmark-static-serialize](https://user-images.githubusercontent.com/345831/95708649-c931a100-0c97-11eb-813a-6bacbcc91ecf.png)
 
 #### Deserialize
 
-![image](https://user-images.githubusercontent.com/345831/71347900-b4700980-25ae-11ea-967e-4cb5834481b2.png)
+![benchmark-static-deserialize](https://user-images.githubusercontent.com/345831/95708703-e49cac00-0c97-11eb-8143-8582bcab02f6.png)
 
 ## Why fast
 
