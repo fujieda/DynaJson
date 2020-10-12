@@ -341,4 +341,4 @@ ASALocalRun/
 healthchecksdb
 
 # Ignore DynamicJson.cs because of Ms-PL
-DynamicJson.cs
+DynamicJson/DynamicJson.cs
