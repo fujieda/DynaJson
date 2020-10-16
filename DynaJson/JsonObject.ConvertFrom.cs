@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace DynaJson
 {
@@ -9,13 +10,15 @@ namespace DynaJson
     {
         private static class ConvertFrom
         {
-            private class Context
+            [StructLayout(LayoutKind.Explicit)]
+            private struct Context
             {
+                [FieldOffset(0)]
                 public ConvertMode Mode;
-                public IEnumerator ArrayEnumerator;
+                [FieldOffset(8)]
+                public ArrayEnumerator ArrayEnumerator;
+                [FieldOffset(8)]
                 public GetterEnumerator GetterEnumerator;
-                public JsonArray DstArray;
-                public JsonDictionary DstDictionary;
             }
 
             private static readonly Stack<Context> Stack = new Stack<Context>();
@@ -77,15 +80,14 @@ namespace DynaJson
                             context = new Context
                             {
                                 Mode = ConvertMode.Array,
-                                ArrayEnumerator = ((IEnumerable)value).GetEnumerator(),
-                                DstArray = new JsonArray()
+                                ArrayEnumerator = new ArrayEnumerator(value)
                             };
                             goto ArrayNext;
                         }
                         if (value is JsonObject obj)
                         {
                             result = obj._data;
-                            break;
+                            goto Return;
                         }
                         Stack.Push(context);
                         var v1 = value;
@@ -93,7 +95,6 @@ namespace DynaJson
                         {
                             Mode = ConvertMode.Object,
                             GetterEnumerator = new GetterEnumerator(v1),
-                            DstDictionary = new JsonDictionary()
                         };
                         goto ObjectNext;
                 }
@@ -103,30 +104,24 @@ namespace DynaJson
                     return result;
                 if (context.Mode == ConvertMode.Array)
                 {
-                    context.DstArray.Add(result);
+                    context.ArrayEnumerator.SetResult(result);
                     goto ArrayNext;
                 }
-                context.DstDictionary[context.GetterEnumerator.Current.Name] = result;
+                context.GetterEnumerator.SetResult(result);
 
                 ObjectNext:
-                if (context.GetterEnumerator.MoveNext())
-                {
-                    value = context.GetterEnumerator.Current.Value;
+                if (context.GetterEnumerator.TryNext(ref value, ref result))
                     goto Convert;
-                }
                 result.Type = JsonType.Object;
-                result.Dictionary = context.DstDictionary;
+                result.Dictionary = context.GetterEnumerator.DstDictionary;
                 context = Stack.Pop();
                 goto Return;
 
                 ArrayNext:
-                if (context.ArrayEnumerator.MoveNext())
-                {
-                    value = context.ArrayEnumerator.Current;
+                if (context.ArrayEnumerator.TryNext(ref value))
                     goto Convert;
-                }
                 result.Type = JsonType.Array;
-                result.Array = context.DstArray;
+                result.Array = context.ArrayEnumerator.DstArray;
                 context = Stack.Pop();
                 goto Return;
             }
@@ -141,11 +136,42 @@ namespace DynaJson
                 return (string)System.Convert.ChangeType(value, typeof(string), CultureInfo.InvariantCulture);
             }
 
+            private class ArrayEnumerator
+            {
+                private readonly IEnumerator _enumerator;
+
+                public readonly JsonArray DstArray = new JsonArray();
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public ArrayEnumerator(object value)
+                {
+                    _enumerator = ((IEnumerable)value).GetEnumerator();
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public bool TryNext(ref object value)
+                {
+                    if (!_enumerator.MoveNext())
+                        return false;
+                    value = _enumerator.Current;
+                    return true;
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public void SetResult(InternalObject result)
+                {
+                    DstArray.Add(result);
+                }
+            }
+
             private class GetterEnumerator
             {
                 private readonly ReflectiveOperation.Getter[] _getters;
                 private readonly object _target;
                 private int _position = -1;
+                private string _name;
+
+                public readonly JsonDictionary DstDictionary = new JsonDictionary();
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public GetterEnumerator(object target)
@@ -155,20 +181,27 @@ namespace DynaJson
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public bool MoveNext()
+                public bool TryNext(ref object value, ref InternalObject result)
                 {
                     while (true)
                     {
                         _position++;
                         if (_position == _getters.Length)
                             return false;
-                        Current = _getters[_position];
-                        Current.Value = Current.Invoke(_target);
-                        return true;
+                        result.Type = JsonType.Null;
+                        value = _getters[_position].Invoke(_target, ref result);
+                        _name = _getters[_position].Name;
+                        if (result.Type == JsonType.Null)
+                            return true;
+                        DstDictionary[_name] = result;
                     }
                 }
 
-                public ReflectiveOperation.Getter Current { get; private set; }
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public void SetResult(InternalObject result)
+                {
+                    DstDictionary[_name] = result;
+                }
             }
         }
     }

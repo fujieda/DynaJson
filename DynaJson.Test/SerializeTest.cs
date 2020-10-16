@@ -131,5 +131,19 @@ namespace DynaJson.Test
             Assert.AreEqual(@"{""a"":""b"",""b"":1}", json);
         }
 #endif
+
+        private class A
+        {
+            public string S { get; set; }
+            public A Obj { get; set; }
+        }
+
+        [TestMethod]
+        public void SerializeObjectHaveNull()
+        {
+            var a = new A();
+            var json = JsonObject.Serialize(a);
+            Assert.AreEqual(@"{""S"":null,""Obj"":null}", json);
+        }
     }
 }

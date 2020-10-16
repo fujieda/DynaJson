@@ -10,7 +10,8 @@ namespace DynaJson
         internal unsafe class Serializer
         {
             private static readonly Serializer Instance = new Serializer();
-            private readonly char[] _buffer = new char[4096];
+
+            private readonly char[] _buffer = new char[1024];
             private char* _bufferStart;
             private char* _bufferEnd;
             private char* _pointer;

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace DynaJson
 {
@@ -26,8 +27,7 @@ namespace DynaJson
         public class Getter
         {
             public string Name;
-            public Func<object, object> Invoke;
-            public object Value;
+            public GetterDelegate Invoke;
         }
 
         public class Setter
@@ -38,7 +38,8 @@ namespace DynaJson
             public InternalObject Value;
         }
 
-        private static readonly ReflectionCache<Getter[]> GetterListCache = new ReflectionCache<Getter[]>(CreateGetterList);
+        private static readonly ReflectionCache<Getter[]> GetterListCache =
+            new ReflectionCache<Getter[]>(CreateGetterList);
 
         public static Getter[] GetGetterList(Type type)
         {
@@ -55,17 +56,62 @@ namespace DynaJson
                 }).ToArray();
         }
 
-        private static Func<object, object> MakeGetter(PropertyInfo prop)
+        private static GetterDelegate MakeGetter(PropertyInfo prop)
         {
-            var paramObj = Expression.Parameter(typeof(object));
-            return Expression.Lambda<Func<object, object>>(
-                Expression.Convert(
-                    // ReSharper disable once AssignNullToNotNullAttribute
-                    Expression.Property(Expression.Convert(paramObj, prop.DeclaringType), prop),
-                    typeof(object)), paramObj).Compile();
+            var paramThis = Expression.Parameter(typeof(object));
+            var paramRefObj = Expression.Parameter(typeof(InternalObject).MakeByRefType());
+            var type = prop.PropertyType;
+            // ReSharper disable once AssignNullToNotNullAttribute
+            var propExp = Expression.Property(Expression.Convert(paramThis, prop.DeclaringType), prop);
+            var numberField = FieldExp(paramRefObj, "Number");
+            var typeField = FieldExp(paramRefObj, "Type");
+            var stringField = FieldExp(paramRefObj, "String");
+            Expression body = Expression.Convert(propExp, typeof(object));
+            switch (Type.GetTypeCode(type))
+            {
+                case TypeCode.Boolean:
+                    body = ReturnNull(Expression.Assign(typeField,
+                        Expression.Condition(Expression.Convert(propExp, typeof(bool)),
+                            Expression.Constant(JsonType.True), Expression.Constant(JsonType.False))));
+                    break;
+                case TypeCode.Int32:
+                    body = ReturnNull(Expression.Assign(numberField,
+                        Expression.Convert(propExp, typeof(double))));
+                    break;
+                case TypeCode.Single:
+                    body = ReturnNull(Expression.Assign(numberField,
+                        Expression.Convert(propExp, typeof(double))));
+                    break;
+                case TypeCode.Double:
+                    body = ReturnNull(Expression.Assign(numberField, propExp));
+                    break;
+                case TypeCode.String:
+                    body = Expression.Condition(
+                        Expression.ReferenceEqual(propExp, Expression.Constant(null)),
+                        Expression.Constant(null),
+                        Expression.Block(
+                            Expression.Assign(typeField, Expression.Constant(JsonType.String)),
+                            Expression.Assign(stringField, propExp),
+                            Expression.Constant(null)));
+                    break;
+            }
+            return Expression.Lambda<GetterDelegate>(body, paramThis, paramRefObj).Compile();
         }
 
-        private static readonly ReflectionCache<Setter[]> SetterListCache = new ReflectionCache<Setter[]>(CreateSetterList);
+        private static Expression FieldExp(Expression obj, string name)
+        {
+            return Expression.Field(obj, typeof(InternalObject).GetField(name));
+        }
+
+        private static Expression ReturnNull(Expression lambda)
+        {
+            return Expression.Block(lambda, Expression.Constant(null));
+        }
+
+        public delegate object GetterDelegate(object target, ref InternalObject obj);
+
+        private static readonly ReflectionCache<Setter[]> SetterListCache =
+            new ReflectionCache<Setter[]>(CreateSetterList);
 
         public static Setter[] GetSetterList(Type type)
         {
@@ -96,7 +142,8 @@ namespace DynaJson
                 paramThis, paramObj).Compile();
         }
 
-        private static readonly ReflectionCache<Func<object>> ObjectCreatorCache = new ReflectionCache<Func<object>>(CreateObjectCreator);
+        private static readonly ReflectionCache<Func<object>> ObjectCreatorCache =
+            new ReflectionCache<Func<object>>(CreateObjectCreator);
 
         public static Func<object> GetObjectCreator(Type type)
         {
