@@ -14,6 +14,7 @@ namespace DynaJson
         private TextReader _reader;
         private readonly char[] _buffer = new char[ReaderBufferSize];
         private char[] _charBuffer = new char[StringInitialCapacity];
+        private readonly Stack<Context> _stack = new Stack<Context>();
 
         private int _available;
         private int _bufferIndex;
@@ -43,6 +44,7 @@ namespace DynaJson
             _available = _reader.ReadBlock(_buffer, 0, _buffer.Length);
             _isEnd = _available == 0;
             _nextChar = _buffer[0];
+            _stack.Count = 0;
         }
 
         public static object Parse(TextReader reader, int maxDepth)
@@ -53,8 +55,6 @@ namespace DynaJson
         private object ParseInternal(TextReader reader, int maxDepth)
         {
             Setup(reader);
-            var stack = new Context[maxDepth];
-            var depth = 0;
             var context = new Context();
 
             SkipWhiteSpaces();
@@ -94,10 +94,10 @@ namespace DynaJson
                         value.String = GetString();
                         break;
                     case '[':
-                        if (depth == maxDepth)
-                            throw JsonParserException.TooDeepNesting(depth, _position);
+                        if (_stack.Count == maxDepth)
+                            throw JsonParserException.TooDeepNesting(_stack.Count, _position);
                         Consume();
-                        stack[depth++] = context;
+                        _stack.Push(context);
                         context = new Context
                         {
                             Array = new JsonArray()
@@ -110,13 +110,13 @@ namespace DynaJson
                         Consume();
                         value.Type = JsonType.Array;
                         value.Array = context.Array;
-                        context = stack[--depth];
+                        context = _stack.Pop();
                         break;
                     case '{':
-                        if (depth == maxDepth)
-                            throw JsonParserException.TooDeepNesting(depth, _position);
+                        if (_stack.Count == maxDepth)
+                            throw JsonParserException.TooDeepNesting(_stack.Count, _position);
                         Consume();
-                        stack[depth++] = context;
+                        _stack.Push(context);
                         context = new Context
                         {
                             Dictionary = new JsonDictionary()
@@ -128,7 +128,7 @@ namespace DynaJson
                         Consume();
                         value.Type = JsonType.Object;
                         value.Dictionary = context.Dictionary;
-                        context = stack[--depth];
+                        context = _stack.Pop();
                         break;
                     default:
                         if (_isEnd)
@@ -138,7 +138,7 @@ namespace DynaJson
 
                 SkipWhiteSpaces();
                 // Start
-                if (depth == 0)
+                if (_stack.Count == 0)
                 {
                     if (_isEnd)
                         return JsonObject.ToValue(value);
@@ -390,7 +390,7 @@ namespace DynaJson
 
         public static JsonParserException UnexpectedError(char ch, int position)
         {
-            return new JsonParserException("Unexpected" , $"character '{ch}'", position);
+            return new JsonParserException("Unexpected", $"character '{ch}'", position);
         }
 
         public static JsonParserException InvalidError(string item, int position)

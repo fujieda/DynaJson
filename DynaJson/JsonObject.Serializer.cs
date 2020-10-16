@@ -15,6 +15,7 @@ namespace DynaJson
             private char* _bufferEnd;
             private char* _pointer;
             private TextWriter _writer;
+            private readonly Stack<Context> _stack = new Stack<Context>();
 
             [Flags]
             private enum Mode
@@ -43,9 +44,8 @@ namespace DynaJson
 
             private void SerializeInternal(InternalObject obj, TextWriter writer, int maxDepth)
             {
-                var stack = new Context[maxDepth];
+                _stack.Count = 0;
                 var context = new Context();
-                var depth = 0;
                 _writer = writer;
                 fixed (char* bufferStart = _buffer)
                 {
@@ -90,7 +90,7 @@ namespace DynaJson
                             }
                             EnsureBuffer(1);
                             *_pointer++ = '[';
-                            stack[depth++] = context;
+                            _stack.Push(context);
                             context = new Context
                             {
                                 Mode = Mode.Array,
@@ -107,9 +107,9 @@ namespace DynaJson
                             }
                             EnsureBuffer(1);
                             *_pointer++ = '{';
-                            if (depth == maxDepth)
+                            if (_stack.Count == maxDepth)
                                 throw new JsonSerializerException("Too deep nesting");
-                            stack[depth++] = context;
+                            _stack.Push(context);
                             context = new Context
                             {
                                 DictionaryEnumerator = obj.Dictionary.GetEnumerator()
@@ -122,7 +122,7 @@ namespace DynaJson
                     }
 
                     Return:
-                    if (depth == 0)
+                    if (_stack.Count == 0)
                     {
                         var len = (int)(_pointer - _bufferStart);
                         if (len > 0)
@@ -167,7 +167,7 @@ namespace DynaJson
                         EnsureBuffer(1);
                         *_pointer++ = '}';
                     }
-                    context = stack[--depth];
+                    context = _stack.Pop();
                     goto Return;
                 }
             }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -19,9 +18,11 @@ namespace DynaJson
                 public JsonDictionary DstDictionary;
             }
 
+            private static readonly Stack<Context> Stack = new Stack<Context>();
+
             public static InternalObject Convert(object value)
             {
-                var stack = new Stack<Context>();
+                Stack.Count = 0;
                 var context = new Context();
                 var result = new InternalObject();
 
@@ -72,7 +73,7 @@ namespace DynaJson
                     case TypeCode.Object:
                         if (typeof(IEnumerable).IsAssignableFrom(type)) // Can convert to array
                         {
-                            stack.Push(context);
+                            Stack.Push(context);
                             context = new Context
                             {
                                 Mode = ConvertMode.Array,
@@ -86,7 +87,7 @@ namespace DynaJson
                             result = obj._data;
                             break;
                         }
-                        stack.Push(context);
+                        Stack.Push(context);
                         var v1 = value;
                         context = new Context
                         {
@@ -98,7 +99,7 @@ namespace DynaJson
                 }
 
                 Return:
-                if (stack.Count == 0)
+                if (Stack.Count == 0)
                     return result;
                 if (context.Mode == ConvertMode.Array)
                 {
@@ -115,7 +116,7 @@ namespace DynaJson
                 }
                 result.Type = JsonType.Object;
                 result.Dictionary = context.DstDictionary;
-                context = stack.Pop();
+                context = Stack.Pop();
                 goto Return;
 
                 ArrayNext:
@@ -126,7 +127,7 @@ namespace DynaJson
                 }
                 result.Type = JsonType.Array;
                 result.Array = context.DstArray;
-                context = stack.Pop();
+                context = Stack.Pop();
                 goto Return;
             }
 

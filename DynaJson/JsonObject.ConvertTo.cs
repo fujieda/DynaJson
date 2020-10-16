@@ -24,6 +24,8 @@ namespace DynaJson
 
         private static class ConvertTo
         {
+            private static readonly Stack<Context> Stack = new Stack<Context>();
+
             internal static object Convert(InternalObject obj, Type type)
             {
                 if (type == typeof(IEnumerable))
@@ -43,7 +45,7 @@ namespace DynaJson
 
             private static object ConvertToObject(InternalObject obj, Type type)
             {
-                var stack = new Stack<Context>();
+                Stack.Count = 0;
                 var context = new Context();
                 object result;
 
@@ -68,7 +70,7 @@ namespace DynaJson
                         result = type == typeof(string) ? obj.String : ChangeType(ToValue(obj), type, InvariantCulture);
                         break;
                     case JsonType.Array:
-                        stack.Push(context);
+                        Stack.Push(context);
                         if (!type.IsArray && !IsGenericList(type))
                             throw InvalidCastException(obj, type);
                         if (type.IsArray)
@@ -95,7 +97,7 @@ namespace DynaJson
                     case JsonType.Object:
                         if (type.IsArray)
                             throw InvalidCastException(obj, type);
-                        stack.Push(context);
+                        Stack.Push(context);
                         context = new Context
                         {
                             Mode = ConvertMode.Object,
@@ -115,7 +117,7 @@ namespace DynaJson
                 }
 
                 Return:
-                if (stack.Count == 0)
+                if (Stack.Count == 0)
                     return result;
                 switch (context.Mode)
                 {
@@ -135,7 +137,7 @@ namespace DynaJson
                 if (!context.JsonArrayEnumerator.MoveNext())
                 {
                     result = context.DstArray;
-                    context = stack.Pop();
+                    context = Stack.Pop();
                     goto Return;
                 }
                 type = context.Type;
@@ -146,7 +148,7 @@ namespace DynaJson
                 if (!context.SetterEnumerator.MoveNext())
                 {
                     result = context.DstObject;
-                    context = stack.Pop();
+                    context = Stack.Pop();
                     goto Return;
                 }
                 var current = context.SetterEnumerator.Current;
