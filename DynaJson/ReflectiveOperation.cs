@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace DynaJson
 {
@@ -35,7 +34,6 @@ namespace DynaJson
             public string Name;
             public Type Type;
             public Action<object, object> Invoke;
-            public InternalObject Value;
         }
 
         private static readonly ReflectionCache<Getter[]> GetterListCache =

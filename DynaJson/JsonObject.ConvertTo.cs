@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static System.Convert;
 using static System.Globalization.CultureInfo;
 
@@ -33,14 +35,17 @@ namespace DynaJson
                 return ConvertToObject(obj, type);
             }
 
-            private class Context
+            [StructLayout(LayoutKind.Explicit)]
+            private struct Context
             {
+                [FieldOffset(0)]
                 public ConvertMode Mode;
-                public JsonArray.Enumerator JsonArrayEnumerator;
+                [FieldOffset(8)]
+                public ArrayEnumerator ArrayEnumerator;
+                [FieldOffset(8)]
+                public ListEnumerator ListEnumerator;
+                [FieldOffset(8)]
                 public SetterEnumerator SetterEnumerator;
-                public object DstObject;
-                public dynamic DstArray;
-                public Type Type;
             }
 
             private static object ConvertToObject(InternalObject obj, Type type)
@@ -75,25 +80,22 @@ namespace DynaJson
                             throw InvalidCastException(obj, type);
                         if (type.IsArray)
                         {
-                            var element = type.GetElementType();
                             context = new Context
                             {
                                 Mode = ConvertMode.Array,
-                                Type = element,
-                                DstArray = Array.CreateInstance(element, obj.Array.Count)
+                                ArrayEnumerator = new ArrayEnumerator(type, obj.Array)
                             };
+                            goto ArrayNext;
                         }
                         else
                         {
                             context = new Context
                             {
                                 Mode = ConvertMode.List,
-                                Type = type.GetGenericArguments()[0],
-                                DstArray = ReflectiveOperation.GetObjectCreator(type)()
+                                ListEnumerator = new ListEnumerator(type, obj.Array)
                             };
+                            goto ListNext;
                         }
-                        context.JsonArrayEnumerator = obj.Array.GetEnumerator();
-                        goto ArrayNext;
                     case JsonType.Object:
                         if (type.IsArray)
                             throw InvalidCastException(obj, type);
@@ -101,7 +103,6 @@ namespace DynaJson
                         context = new Context
                         {
                             Mode = ConvertMode.Object,
-                            DstObject = ReflectiveOperation.GetObjectCreator(type)(),
                             SetterEnumerator = new SetterEnumerator(type, obj.Dictionary)
                         };
                         goto ObjectNext;
@@ -122,38 +123,40 @@ namespace DynaJson
                 switch (context.Mode)
                 {
                     case ConvertMode.Array:
-                        // ReSharper disable once RedundantCast
-                        context.DstArray[context.JsonArrayEnumerator.Position] = (dynamic)result;
+                        context.ArrayEnumerator.SetResult(result);
                         break;
                     case ConvertMode.List:
-                        context.DstArray.Add((dynamic)result);
-                        break;
+                        context.ListEnumerator.SetResult(result);
+                        goto ListNext;
                     case ConvertMode.Object:
-                        context.SetterEnumerator.Current.Invoke(context.DstObject, result);
+                        context.SetterEnumerator.SetResult(result);
                         goto ObjectNext;
                 }
-
                 ArrayNext:
-                if (!context.JsonArrayEnumerator.MoveNext())
+                if (!context.ArrayEnumerator.TryNext(ref obj))
                 {
-                    result = context.DstArray;
+                    result = context.ArrayEnumerator.DstObject;
                     context = Stack.Pop();
                     goto Return;
                 }
-                type = context.Type;
-                obj = context.JsonArrayEnumerator.Current;
+                type = context.ArrayEnumerator.Element;
                 goto Convert;
-
-                ObjectNext:
-                if (!context.SetterEnumerator.MoveNext())
+                ListNext:
+                if (!context.ListEnumerator.TryNext(ref obj))
                 {
-                    result = context.DstObject;
+                    result = context.ListEnumerator.DstObject;
                     context = Stack.Pop();
                     goto Return;
                 }
-                var current = context.SetterEnumerator.Current;
-                type = current.Type;
-                obj = current.Value;
+                type = context.ListEnumerator.Element;
+                goto Convert;
+                ObjectNext:
+                if (!context.SetterEnumerator.TryNext(ref type, ref obj))
+                {
+                    result = context.SetterEnumerator.DstObject;
+                    context = Stack.Pop();
+                    goto Return;
+                }
                 goto Convert;
             }
 
@@ -163,34 +166,103 @@ namespace DynaJson
                 return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
             }
 
+            private class ArrayEnumerator
+            {
+                private readonly JsonArray.Enumerator _enumerator;
+                public readonly Type Element;
+                public dynamic DstObject { get; }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public ArrayEnumerator(Type type, JsonArray array)
+                {
+                    Element = type.GetElementType();
+                    DstObject = Array.CreateInstance(Element, array.Count);
+                    _enumerator = array.GetEnumerator();
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public bool TryNext(ref InternalObject obj)
+                {
+                    if (!_enumerator.MoveNext())
+                        return false;
+                    obj = _enumerator.Current;
+                    return true;
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public void SetResult(dynamic result)
+                {
+                    DstObject[_enumerator.Position] = result;
+                }
+            }
+
+            private class ListEnumerator
+            {
+                private readonly JsonArray.Enumerator _enumerator;
+                public readonly Type Element;
+                public dynamic DstObject { get; }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public ListEnumerator(Type type, JsonArray array)
+                {
+                    DstObject = ReflectiveOperation.GetObjectCreator(type)();
+                    _enumerator = array.GetEnumerator();
+                    Element = type.GenericTypeArguments[0];
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public bool TryNext(ref InternalObject obj)
+                {
+                    if (!_enumerator.MoveNext())
+                        return false;
+                    obj = _enumerator.Current;
+                    return true;
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public void SetResult(dynamic result)
+                {
+                    DstObject.Add(result);
+                }
+            }
+
             private class SetterEnumerator
             {
                 private readonly ReflectiveOperation.Setter[] _setters;
                 private readonly JsonDictionary _dict;
                 private int _position = -1;
+                private ReflectiveOperation.Setter _current;
+
+                public object DstObject { get; }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public SetterEnumerator(Type type, JsonDictionary dict)
                 {
+                    DstObject = ReflectiveOperation.GetObjectCreator(type)();
                     _setters = ReflectiveOperation.GetSetterList(type);
                     _dict = dict;
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                public bool MoveNext()
+                public bool TryNext(ref Type type, ref InternalObject value)
                 {
                     while (true)
                     {
                         _position++;
                         if (_position == _setters.Length)
                             return false;
-                        Current = _setters[_position];
-                        if (_dict.TryGetValue(Current.Name, out Current.Value))
+                        _current = _setters[_position];
+                        type = _current.Type;
+                        if (_dict.TryGetValue(_current.Name, out value))
                             return true;
                     }
                 }
 
-                public ReflectiveOperation.Setter Current { get; private set; }
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public void SetResult(object result)
+                {
+                    _current.Invoke(DstObject, result);
+                }
             }
         }
 
