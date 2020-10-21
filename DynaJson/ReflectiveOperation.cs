@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -108,12 +109,31 @@ namespace DynaJson
 
         public delegate object GetterDelegate(object target, ref InternalObject obj);
 
-        private static readonly ReflectionCache<Setter[]> SetterListCache =
-            new ReflectionCache<Setter[]>(CreateSetterList);
+        private static readonly ReflectionCache<ObjectCreator> ObjectCreatorCache =
+            new ReflectionCache<ObjectCreator>(ObjectCreator.Create);
 
-        public static Setter[] GetSetterList(Type type)
+        public class ObjectCreator
         {
-            return SetterListCache.Get(type);
+            public readonly Func<object> Creator;
+            public readonly Setter[] Setters;
+
+            public static ObjectCreator Create(Type type)
+            {
+                return new ObjectCreator(type);
+            }
+
+            private ObjectCreator(Type type)
+            {
+                Creator = CreateObjectCreator(type);
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+                    return;
+                Setters = CreateSetterList(type);
+            }
+        }
+
+        public static ObjectCreator GetObjectCreator(Type type)
+        {
+            return ObjectCreatorCache.Get(type);
         }
 
         private static Setter[] CreateSetterList(Type type)
@@ -138,14 +158,6 @@ namespace DynaJson
                     Expression.Property(Expression.Convert(paramThis, prop.DeclaringType), prop),
                     Expression.Convert(paramObj, prop.PropertyType)),
                 paramThis, paramObj).Compile();
-        }
-
-        private static readonly ReflectionCache<Func<object>> ObjectCreatorCache =
-            new ReflectionCache<Func<object>>(CreateObjectCreator);
-
-        public static Func<object> GetObjectCreator(Type type)
-        {
-            return ObjectCreatorCache.Get(type);
         }
 
         private static Func<object> CreateObjectCreator(Type type)

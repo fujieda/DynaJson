@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -205,7 +204,8 @@ namespace DynaJson
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public ListEnumerator(Type type, JsonArray array)
                 {
-                    DstObject = ReflectiveOperation.GetObjectCreator(type)();
+                    var creator = ReflectiveOperation.GetObjectCreator(type);
+                    DstObject = creator.Creator();
                     _enumerator = array.GetEnumerator();
                     Element = type.GenericTypeArguments[0];
                 }
@@ -238,8 +238,9 @@ namespace DynaJson
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 public SetterEnumerator(Type type, JsonDictionary dict)
                 {
-                    DstObject = ReflectiveOperation.GetObjectCreator(type)();
-                    _setters = ReflectiveOperation.GetSetterList(type);
+                    var creator = ReflectiveOperation.GetObjectCreator(type);
+                    DstObject = creator.Creator();
+                    _setters = creator.Setters;
                     _dict = dict;
                 }
 
