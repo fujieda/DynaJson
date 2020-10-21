@@ -116,6 +116,7 @@ namespace DynaJson
         {
             public readonly Func<object> Creator;
             public readonly Setter[] Setters;
+            public readonly Type Element;
 
             public static ObjectCreator Create(Type type)
             {
@@ -126,7 +127,10 @@ namespace DynaJson
             {
                 Creator = CreateObjectCreator(type);
                 if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    Element = type.GenericTypeArguments[0];
                     return;
+                }
                 Setters = CreateSetterList(type);
             }
         }

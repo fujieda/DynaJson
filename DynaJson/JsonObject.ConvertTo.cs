@@ -207,7 +207,7 @@ namespace DynaJson
                     var creator = ReflectiveOperation.GetObjectCreator(type);
                     DstObject = creator.Creator();
                     _enumerator = array.GetEnumerator();
-                    Element = type.GenericTypeArguments[0];
+                    Element = creator.Element;
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
