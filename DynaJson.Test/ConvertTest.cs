@@ -97,6 +97,7 @@ namespace DynaJson.Test
         private class A
         {
             public string S { get; set; }
+            public DateTime D { get; set; }
         }
 
         private class Empty
@@ -131,6 +132,20 @@ namespace DynaJson.Test
             var array = JsonObject.Parse("[0,1]");
 
             Assert.AreEqual(1d, array.Deserialize<double[]>()[1]);
+        }
+
+        [TestMethod]
+        public void ConvertStringToDateTime()
+        {
+            var obj = (A)JsonObject.Parse(@"{""D"":""2020-10-10""}");
+            Assert.AreEqual(new DateTime(2020, 10, 10), obj.D);
+        }
+
+        [TestMethod]
+        public void ConvertNumberToString()
+        {
+            var obj = (A)JsonObject.Parse(@"{""S"":1.1}");
+            Assert.AreEqual("1.1", obj.S);
         }
 
         [TestMethod]

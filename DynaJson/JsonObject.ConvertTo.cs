@@ -254,8 +254,11 @@ namespace DynaJson
                             return false;
                         _current = _setters[_position];
                         type = _current.Type;
-                        if (_dict.TryGetValue(_current.Name, out value))
+                        if (!_dict.TryGetValue(_current.Name, out value))
+                            continue;
+                        if (_current.DirectInvoke == null)
                             return true;
+                        _current.DirectInvoke(DstObject, value);
                     }
                 }
 
