@@ -5,21 +5,28 @@ namespace DynaJson
 {
     public class TypeDictionary<T>
     {
-        private int _count = - 1;
-        private T[] _value = new T[5];
-        private Type[] _key = new Type[5];
+        private readonly struct KeyValuePair
+        {
+            public readonly Type Key;
+            public readonly T Value;
+
+            public KeyValuePair(Type key, T value)
+            {
+                Key = key;
+                Value = value;
+            }
+        }
+
+        private int _count = -1;
+        private KeyValuePair[] _list = new KeyValuePair[5];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Insert(Type key, T value)
         {
             _count++;
-            if (_count == _key.Length)
-            {
-                Array.Resize(ref _key, _count * 2);
-                Array.Resize(ref _value, _count * 2);
-            }
-            _key[_count] = key;
-            _value[_count] = value;
+            if (_count >= _list.Length)
+                Array.Resize(ref _list, _list.Length * 2);
+            _list[_count] = new KeyValuePair(key, value);
             return value;
         }
 
@@ -29,9 +36,9 @@ namespace DynaJson
             value = default;
             for (var i = _count - 1; i >= 0; i--)
             {
-                if (_key[i] != key)
+                if (_list[i].Key != key)
                     continue;
-                value = _value[i];
+                value = _list[i].Value;
                 return true;
             }
             return false;
