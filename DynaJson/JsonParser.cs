@@ -7,12 +7,12 @@ namespace DynaJson
 {
     internal class JsonParser
     {
-        public const int StringInitialCapacity = 128;
-        public const int ReaderBufferSize = 2048;
+        public const int StringInitialCapacity = 32;
+        public const int ReaderBufferSize = 512;
 
         private TextReader _reader;
+        private readonly StringBuffer _stringBuffer = new StringBuffer();
         private readonly char[] _buffer = new char[ReaderBufferSize];
-        private char[] _charBuffer = new char[StringInitialCapacity];
         private readonly Stack<Context> _stack = new Stack<Context>();
 
         private int _available;
@@ -48,10 +48,12 @@ namespace DynaJson
             return new JsonParser().ParseInternal(reader, maxDepth);
         }
 
-        private object ParseInternal(TextReader reader, int maxDepth)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe object ParseInternal(TextReader reader, int maxDepth)
         {
             Setup(reader);
             var context = new Context();
+            var charBuffer = stackalloc char[StringInitialCapacity];
 
             SkipWhiteSpaces();
             while (true)
@@ -87,7 +89,7 @@ namespace DynaJson
                         break;
                     case '"':
                         value.Type = JsonType.String;
-                        value.String = GetString();
+                        value.String = GetString(charBuffer);
                         break;
                     case '[':
                         if (_stack.Count == maxDepth)
@@ -166,7 +168,7 @@ namespace DynaJson
                     continue;
                 if (_nextChar != '"')
                     throw JsonParserException.ExpectingError("string", _position);
-                context.Key = GetString();
+                context.Key = GetString(charBuffer);
                 SkipWhiteSpaces();
                 if (_nextChar != ':')
                     throw JsonParserException.ExpectingError("':'", _position);
@@ -277,20 +279,19 @@ namespace DynaJson
             return '0' <= _nextChar && _nextChar <= '9';
         }
 
-        private string GetString()
+        private unsafe string GetString(char* charBuffer)
         {
             Consume();
-            var start = _position;
             var len = 0;
             while (true)
             {
                 if (_isEnd)
-                    throw JsonParserException.UnexpectedEnd(start + len);
+                    throw JsonParserException.UnexpectedEnd(_position);
                 var ch = _nextChar;
                 if (ch == '"')
                 {
                     Consume();
-                    return new string(_charBuffer, 0, len);
+                    return _stringBuffer.GetString(charBuffer, len);
                 }
                 if (ch == '\\')
                 {
@@ -300,10 +301,40 @@ namespace DynaJson
                 {
                     throw JsonParserException.UnexpectedError(ch, _position);
                 }
-                if (len >= _charBuffer.Length)
-                    Array.Resize(ref _charBuffer, _charBuffer.Length * 2);
-                _charBuffer[len++] = ch;
+                if (len >= StringInitialCapacity)
+                {
+                    _stringBuffer.Append(charBuffer, len);
+                    len = 0;
+                }
+                charBuffer[len++] = ch;
                 Consume();
+            }
+        }
+
+        private unsafe class StringBuffer
+        {
+            private char[] _buffer = new char[0];
+            private int _position;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public string GetString(char* charBuffer, int len)
+            {
+                if (_position == 0)
+                    return new string(charBuffer, 0, len);
+                Append(charBuffer, len);
+                var s = new string(_buffer, 0, _position);
+                _position = 0;
+                return s;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Append(char* charBuffer, int len)
+            {
+                if (_buffer.Length < _position + len)
+                    Array.Resize(ref _buffer, _position + len);
+                for (var i = 0; i < len; i++)
+                    _buffer[_position + i] = charBuffer[i];
+                _position += len;
             }
         }
 
