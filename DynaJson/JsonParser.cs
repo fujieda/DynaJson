@@ -10,7 +10,6 @@ namespace DynaJson
         public const int StringInitialCapacity = 128;
         public const int ReaderBufferSize = 2048;
 
-        private static readonly JsonParser Instance = new JsonParser();
         private TextReader _reader;
         private readonly char[] _buffer = new char[ReaderBufferSize];
         private char[] _charBuffer = new char[StringInitialCapacity];
@@ -38,18 +37,15 @@ namespace DynaJson
 
         private void Setup(TextReader reader)
         {
-            _bufferIndex = _position = 0;
             _reader = reader;
-            _buffer[0] = '\0';
             _available = _reader.ReadBlock(_buffer, 0, _buffer.Length);
             _isEnd = _available == 0;
             _nextChar = _buffer[0];
-            _stack.Count = 0;
         }
 
         public static object Parse(TextReader reader, int maxDepth)
         {
-            return Instance.ParseInternal(reader, maxDepth);
+            return new JsonParser().ParseInternal(reader, maxDepth);
         }
 
         private object ParseInternal(TextReader reader, int maxDepth)
