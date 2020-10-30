@@ -10,17 +10,25 @@ namespace DynaJson
         public const int StringInitialCapacity = 32;
         public const int ReaderBufferSize = 512;
 
+        private static readonly BufferPool<Buffer> BufferPool = new BufferPool<Buffer>();
+        private Buffer _buffer;
         private TextReader _reader;
-        private readonly StringBuffer _stringBuffer = new StringBuffer();
-        private readonly char[] _buffer = new char[ReaderBufferSize];
-        private readonly Stack<Context> _stack = new Stack<Context>();
-
+        private char[] _readBuffer;
         private int _available;
         private int _bufferIndex;
         private char _nextChar;
         private int _position;
         private bool _isEnd;
+        private StringBuffer _stringBuffer;
+        private Stack<Context> _stack;
         private static readonly bool[] WhiteSpace = new bool[' ' + 1];
+
+        private class Buffer
+        {
+            public readonly char[] Read = new char[ReaderBufferSize];
+            public readonly StringBuffer String = new StringBuffer();
+            public readonly Stack<Context> Stack = new Stack<Context>();
+        }
 
         [StructLayout(LayoutKind.Explicit)]
         private struct Context
@@ -33,14 +41,20 @@ namespace DynaJson
         static JsonParser()
         {
             WhiteSpace['\r'] = WhiteSpace['\n'] = WhiteSpace['\t'] = WhiteSpace[' '] = true;
+            BufferPool.Return(new Buffer());
         }
 
         private void Setup(TextReader reader)
         {
+            _buffer = BufferPool.Rent() ?? new Buffer();
+            _readBuffer = _buffer.Read;
+            _stringBuffer = _buffer.String;
+            _stack = _buffer.Stack;
+            _readBuffer[0] = '\0';
             _reader = reader;
-            _available = _reader.ReadBlock(_buffer, 0, _buffer.Length);
+            _available = _reader.ReadBlock(_readBuffer, 0, _readBuffer.Length);
             _isEnd = _available == 0;
-            _nextChar = _buffer[0];
+            _nextChar = _readBuffer[0];
         }
 
         public static object Parse(TextReader reader, int maxDepth)
@@ -138,6 +152,8 @@ namespace DynaJson
                 // Start
                 if (_stack.Count == 0)
                 {
+                    // The buffer intentionally leaks in exceptional cases to simplify the code for exceptions.
+                    BufferPool.Return(_buffer);
                     if (_isEnd)
                         return JsonObject.ToValue(value);
                     throw JsonParserException.UnexpectedError(_nextChar, _position);
@@ -197,7 +213,7 @@ namespace DynaJson
             if (_available == _bufferIndex)
             {
                 _bufferIndex = 0;
-                _available = _reader.ReadBlock(_buffer, 0, _buffer.Length);
+                _available = _reader.ReadBlock(_readBuffer, 0, _readBuffer.Length);
                 if (_available == 0)
                 {
                     _isEnd = true;
@@ -205,7 +221,7 @@ namespace DynaJson
                     return;
                 }
             }
-            _nextChar = _buffer[_bufferIndex];
+            _nextChar = _readBuffer[_bufferIndex];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
