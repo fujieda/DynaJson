@@ -7,7 +7,7 @@ namespace DynaJson
 {
     public partial class JsonObject
     {
-        internal unsafe class Serializer
+        private unsafe class Serializer
         {
             private static readonly Serializer Instance = new Serializer();
 
@@ -241,14 +241,13 @@ namespace DynaJson
                 _writer.Write(_buffer, 0, (int)(_pointer - _bufferStart));
                 _pointer = _bufferStart;
             }
+        }
 
-
-            // ReSharper disable once MemberCanBePrivate.Global
-            public class JsonSerializerException : Exception
+        // ReSharper disable once MemberCanBePrivate.Global
+        public class JsonSerializerException : Exception
+        {
+            public JsonSerializerException(string message) : base(message)
             {
-                public JsonSerializerException(string message) : base(message)
-                {
-                }
             }
         }
     }
