@@ -9,14 +9,21 @@ namespace DynaJson
     {
         private unsafe class Serializer
         {
-            private static readonly Serializer Instance = new Serializer();
-
-            private readonly char[] _buffer = new char[1024];
+            private const int WriteBufferSize = 512;
+            private static readonly BufferPool<Buffer> BufferPool = new BufferPool<Buffer>();
+            private Buffer _buffer;
+            private char[] _writeBuffer;
             private char* _bufferStart;
             private char* _bufferEnd;
             private char* _pointer;
             private TextWriter _writer;
-            private readonly Stack<Context> _stack = new Stack<Context>();
+            private Stack<Context> _stack;
+
+            private class Buffer
+            {
+                public readonly char[] Write = new char[WriteBufferSize];
+                public readonly Stack<Context> Stack = new Stack<Context>();
+            }
 
             [Flags]
             private enum Mode
@@ -35,23 +42,26 @@ namespace DynaJson
 
             public static void Serialize(object obj, TextWriter writer, int maxDepth)
             {
-                Instance.SerializeInternal(ConvertFrom.Convert(obj), writer, maxDepth);
+                Serialize(ConvertFrom.Convert(obj), writer, maxDepth);
             }
 
             public static void Serialize(InternalObject obj, TextWriter writer, int maxDepth)
             {
-                Instance.SerializeInternal(obj, writer, maxDepth);
+                new Serializer().SerializeInternal(obj, writer, maxDepth);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void SerializeInternal(InternalObject obj, TextWriter writer, int maxDepth)
             {
-                _stack.Count = 0;
+                _buffer = BufferPool.Rent() ?? new Buffer();
+                _writeBuffer = _buffer.Write;
+                _stack = _buffer.Stack;
                 var context = new Context();
                 _writer = writer;
-                fixed (char* bufferStart = _buffer)
+                fixed (char* bufferStart = _writeBuffer)
                 {
                     _bufferStart = bufferStart;
-                    _bufferEnd = bufferStart + _buffer.Length;
+                    _bufferEnd = bufferStart + _writeBuffer.Length;
                     _pointer = bufferStart;
                     Convert:
                     switch (obj.Type)
@@ -127,7 +137,8 @@ namespace DynaJson
                     {
                         var len = (int)(_pointer - _bufferStart);
                         if (len > 0)
-                            _writer.Write(_buffer, 0, len);
+                            _writer.Write(_writeBuffer, 0, len);
+                        BufferPool.Return(_buffer);
                         return;
                     }
 
@@ -238,7 +249,7 @@ namespace DynaJson
             {
                 if (_pointer + size <= _bufferEnd)
                     return;
-                _writer.Write(_buffer, 0, (int)(_pointer - _bufferStart));
+                _writer.Write(_writeBuffer, 0, (int)(_pointer - _bufferStart));
                 _pointer = _bufferStart;
             }
         }
