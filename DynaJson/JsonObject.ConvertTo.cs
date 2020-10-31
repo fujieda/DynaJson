@@ -23,15 +23,16 @@ namespace DynaJson
             return new InvalidCastException($"Unable to cast value of type {obj.Type} to type '{type.Name}'");
         }
 
-        private static class ConvertTo
+        private class ConvertTo
         {
-            private static readonly Stack<Context> Stack = new Stack<Context>();
+            private readonly Stack<Context> _stack = new Stack<Context>();
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal static object Convert(InternalObject obj, Type type)
             {
                 if (type == typeof(IEnumerable))
                     return ConvertToIEnumerable(obj);
-                return ConvertToObject(obj, type);
+                return new ConvertTo().ConvertToObject(obj, type);
             }
 
             [StructLayout(LayoutKind.Explicit)]
@@ -47,9 +48,10 @@ namespace DynaJson
                 public SetterEnumerator SetterEnumerator;
             }
 
-            private static object ConvertToObject(InternalObject obj, Type type)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private object ConvertToObject(InternalObject obj, Type type)
             {
-                Stack.Count = 0;
+                _stack.Count = 0;
                 var context = new Context();
                 object result;
 
@@ -74,7 +76,7 @@ namespace DynaJson
                         result = type == typeof(string) ? obj.String : ChangeType(ToValue(obj), type, InvariantCulture);
                         break;
                     case JsonType.Array:
-                        Stack.Push(context);
+                        _stack.Push(context);
                         if (!type.IsArray && !IsGenericList(type))
                             throw InvalidCastException(obj, type);
                         if (type.IsArray)
@@ -98,7 +100,7 @@ namespace DynaJson
                     case JsonType.Object:
                         if (type.IsArray)
                             throw InvalidCastException(obj, type);
-                        Stack.Push(context);
+                        _stack.Push(context);
                         context = new Context
                         {
                             Mode = ConvertMode.Object,
@@ -117,7 +119,7 @@ namespace DynaJson
                 }
 
                 Return:
-                if (Stack.Count == 0)
+                if (_stack.Count == 0)
                     return result;
                 switch (context.Mode)
                 {
@@ -135,7 +137,7 @@ namespace DynaJson
                 if (!context.ArrayEnumerator.TryNext(ref obj))
                 {
                     result = context.ArrayEnumerator.DstObject;
-                    context = Stack.Pop();
+                    context = _stack.Pop();
                     goto Return;
                 }
                 type = context.ArrayEnumerator.Element;
@@ -144,7 +146,7 @@ namespace DynaJson
                 if (!context.ListEnumerator.TryNext(ref obj))
                 {
                     result = context.ListEnumerator.DstObject;
-                    context = Stack.Pop();
+                    context = _stack.Pop();
                     goto Return;
                 }
                 type = context.ListEnumerator.Element;
@@ -153,7 +155,7 @@ namespace DynaJson
                 if (!context.SetterEnumerator.TryNext(ref type, ref obj))
                 {
                     result = context.SetterEnumerator.DstObject;
-                    context = Stack.Pop();
+                    context = _stack.Pop();
                     goto Return;
                 }
                 goto Convert;
@@ -175,6 +177,7 @@ namespace DynaJson
                 public ArrayEnumerator(Type type, JsonArray array)
                 {
                     Element = type.GetElementType();
+                    // ReSharper disable once AssignNullToNotNullAttribute
                     DstObject = Array.CreateInstance(Element, array.Count);
                     _enumerator = array.GetEnumerator();
                 }
@@ -270,6 +273,7 @@ namespace DynaJson
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static object ConvertToIEnumerable(InternalObject obj)
         {
             return obj.Type == JsonType.Array
