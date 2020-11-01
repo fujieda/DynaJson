@@ -8,7 +8,7 @@ namespace DynaJson
 {
     public partial class JsonObject
     {
-        private static class ConvertFrom
+        private class ConvertFrom
         {
             [StructLayout(LayoutKind.Explicit)]
             private struct Context
@@ -21,11 +21,17 @@ namespace DynaJson
                 public GetterEnumerator GetterEnumerator;
             }
 
-            private static readonly Stack<Context> Stack = new Stack<Context>();
+            private readonly Stack<Context> _stack = new Stack<Context>();
 
             public static InternalObject Convert(object value)
             {
-                Stack.Count = 0;
+                return new ConvertFrom().ConvertInternal(value);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private InternalObject ConvertInternal(object value)
+            {
+                _stack.Count = 0;
                 var context = new Context();
                 var result = new InternalObject();
 
@@ -76,7 +82,7 @@ namespace DynaJson
                     case TypeCode.Object:
                         if (typeof(IEnumerable).IsAssignableFrom(type)) // Can convert to array
                         {
-                            Stack.Push(context);
+                            _stack.Push(context);
                             context = new Context
                             {
                                 Mode = ConvertMode.Array,
@@ -89,7 +95,7 @@ namespace DynaJson
                             result = obj._data;
                             goto Return;
                         }
-                        Stack.Push(context);
+                        _stack.Push(context);
                         var v1 = value;
                         context = new Context
                         {
@@ -100,7 +106,7 @@ namespace DynaJson
                 }
 
                 Return:
-                if (Stack.Count == 0)
+                if (_stack.Count == 0)
                     return result;
                 if (context.Mode == ConvertMode.Array)
                 {
@@ -114,7 +120,7 @@ namespace DynaJson
                     goto Convert;
                 result.Type = JsonType.Object;
                 result.Dictionary = context.GetterEnumerator.DstDictionary;
-                context = Stack.Pop();
+                context = _stack.Pop();
                 goto Return;
 
                 ArrayNext:
@@ -122,15 +128,17 @@ namespace DynaJson
                     goto Convert;
                 result.Type = JsonType.Array;
                 result.Array = context.ArrayEnumerator.DstArray;
-                context = Stack.Pop();
+                context = _stack.Pop();
                 goto Return;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static double ConvertToDouble(object value)
             {
                 return (double)System.Convert.ChangeType(value, typeof(double), CultureInfo.InvariantCulture);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static string ConvertToString(object value)
             {
                 return (string)System.Convert.ChangeType(value, typeof(string), CultureInfo.InvariantCulture);
