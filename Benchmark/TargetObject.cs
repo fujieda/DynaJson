@@ -29,7 +29,7 @@ namespace Benchmark
             return Configs.First(c => c.Name == name);
         }
 
-        private static readonly TargetObjectConfig[] Configs =
+        public static readonly TargetObjectConfig[] Configs =
         {
             new TargetObjectConfig
             {
