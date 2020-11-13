@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -144,6 +145,14 @@ namespace DynaJson.Test
             var a = new A();
             var json = JsonObject.Serialize(a);
             Assert.AreEqual(@"{""S"":null,""Obj"":null}", json);
+        }
+
+        [TestMethod]
+        public void SerializeDictionary()
+        {
+            var dict = new Dictionary<string, int> {["a"] = 0};
+            var json = JsonObject.Serialize(dict);
+            Assert.AreEqual(@"{""a"":0}", json);
         }
     }
 }

@@ -19,6 +19,8 @@ namespace DynaJson
                 public ArrayEnumerator ArrayEnumerator;
                 [FieldOffset(8)]
                 public GetterEnumerator GetterEnumerator;
+                [FieldOffset(8)]
+                public DictionaryEnumerator DictionaryEnumerator;
             }
 
             private readonly Stack<Context> _stack = new Stack<Context>();
@@ -80,6 +82,16 @@ namespace DynaJson
                         result.String = (string)value;
                         break;
                     case TypeCode.Object:
+                        if (typeof(IDictionary).IsAssignableFrom(type))
+                        {
+                            _stack.Push(context);
+                            context = new Context
+                            {
+                                Mode = ConvertMode.Dictionary,
+                                DictionaryEnumerator = new DictionaryEnumerator(value)
+                            };
+                            goto DictionaryNext;
+                        }
                         if (typeof(IEnumerable).IsAssignableFrom(type)) // Can convert to array
                         {
                             _stack.Push(context);
@@ -113,6 +125,11 @@ namespace DynaJson
                     context.ArrayEnumerator.SetResult(result);
                     goto ArrayNext;
                 }
+                if (context.Mode == ConvertMode.Dictionary)
+                {
+                    context.DictionaryEnumerator.SetResult(result);
+                    goto DictionaryNext;
+                }
                 context.GetterEnumerator.SetResult(result);
 
                 ObjectNext:
@@ -128,6 +145,14 @@ namespace DynaJson
                     goto Convert;
                 result.Type = JsonType.Array;
                 result.Array = context.ArrayEnumerator.DstArray;
+                context = _stack.Pop();
+                goto Return;
+
+                DictionaryNext:
+                if (context.DictionaryEnumerator.TryNext(ref value))
+                    goto Convert;
+                result.Type = JsonType.Object;
+                result.Dictionary = context.DictionaryEnumerator.DstDictionary;
                 context = _stack.Pop();
                 goto Return;
             }
@@ -209,6 +234,36 @@ namespace DynaJson
                 public void SetResult(InternalObject result)
                 {
                     DstDictionary[_name] = result;
+                }
+            }
+
+            private class DictionaryEnumerator
+            {
+                private readonly IDictionaryEnumerator _enumerator;
+                private string _key;
+
+                public readonly JsonDictionary DstDictionary = new JsonDictionary();
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public DictionaryEnumerator(object value)
+                {
+                    _enumerator = ((IDictionary)value).GetEnumerator();
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public bool TryNext(ref object value)
+                {
+                    if (!_enumerator.MoveNext())
+                        return false;
+                    _key = (string)_enumerator.Key;
+                    value = _enumerator.Value;
+                    return true;
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                public void SetResult(InternalObject result)
+                {
+                    DstDictionary[_key] = result;
                 }
             }
         }

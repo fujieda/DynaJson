@@ -15,7 +15,8 @@ namespace DynaJson
         {
             Array,
             List,
-            Object
+            Object,
+            Dictionary
         }
 
         private static InvalidCastException InvalidCastException(InternalObject obj, Type type)
