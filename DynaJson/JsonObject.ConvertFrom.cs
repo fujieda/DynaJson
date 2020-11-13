@@ -33,7 +33,6 @@ namespace DynaJson
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private InternalObject ConvertInternal(object value)
             {
-                _stack.Count = 0;
                 var context = new Context();
                 var result = new InternalObject();
 
