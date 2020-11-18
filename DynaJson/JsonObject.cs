@@ -57,7 +57,7 @@ namespace DynaJson
 
         public T Deserialize<T>()
         {
-            return (T)(dynamic)this;
+            return (T)ConvertTo.Convert(_data, typeof(T));
         }
 
         public void Serialize(TextWriter writer)

@@ -193,6 +193,13 @@ namespace DynaJson.Test
             Assert.That.SequenceEqual(expected, list);
         }
 
+        [TestMethod]
+        public void ConvertToDictionary()
+        {
+            var dict = (Dictionary<string, dynamic>)JsonObject.Parse(@"{""a"":0}");
+            Assert.AreEqual(0, dict["a"]);
+        }
+
         [TestClass]
         public class ErrorTest
         {

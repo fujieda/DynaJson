@@ -31,7 +31,7 @@ namespace DynaJson
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal static object Convert(InternalObject obj, Type type)
             {
-                if (type == typeof(IEnumerable))
+                if (type == typeof(IEnumerable) || type == typeof(Dictionary<string, object>))
                     return ConvertToIEnumerable(obj);
                 return new ConvertTo().ConvertToObject(obj, type);
             }

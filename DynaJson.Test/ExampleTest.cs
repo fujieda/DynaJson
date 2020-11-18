@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -161,6 +163,18 @@ namespace DynaJson.Test
             foreach (KeyValuePair<string, dynamic> item in objectJson)
                 list.Add(item.Key + ":" + item.Value); // ["foo:json", "bar:100"]
             Assert.That.SequenceEqual(new[] {"foo:json", "bar:100"}, list);
+        }
+
+        [TestMethod]
+        public void Dictionary()
+        {
+            const string original = @"{""foo"":""json"",""bar"":100}";
+            // To dictionary
+            var dict = (Dictionary<string, dynamic>)JsonObject.Parse(original);
+            Assert.AreEqual("json", dict["foo"]);
+            // To JSON
+            var result = JsonObject.Serialize(dict);
+            Assert.AreEqual(original, result);
         }
 
         // ReSharper disable all
