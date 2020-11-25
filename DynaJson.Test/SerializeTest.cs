@@ -133,11 +133,13 @@ namespace DynaJson.Test
         }
 #endif
 
+        // ReSharper disable all
         private class A
         {
             public string S { get; set; }
             public A Obj { get; set; }
         }
+        // ReSharper restore all
 
         [TestMethod]
         public void SerializeObjectHaveNull()
@@ -145,6 +147,22 @@ namespace DynaJson.Test
             var a = new A();
             var json = JsonObject.Serialize(a);
             Assert.AreEqual(@"{""S"":null,""Obj"":null}", json);
+        }
+
+        // ReSharper disable all
+        private class B
+        {
+            public int P { get; set; }
+            public int F;
+        }
+        // ReSharper restore all
+
+        [TestMethod]
+        public void SerializePublicField()
+        {
+            var b = new B{F = 1};
+            var json = JsonObject.Serialize(b);
+            Assert.AreEqual(@"{""P"":0,""F"":1}", json);
         }
 
         [TestMethod]

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 // ReSharper disable AssignNullToNotNullAttribute
 
@@ -51,64 +52,81 @@ namespace DynaJson
 
         private static Getter[] CreateGetterList(Type type)
         {
-            return (from prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                select new Getter
-                {
-                    Name = prop.Name,
-                    Invoke = MakeGetter(prop)
-                }).ToArray();
+            return MakeGetters(type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                .Concat(MakeGetters(type.GetFields(BindingFlags.Public | BindingFlags.Instance))).ToArray();
         }
 
-        private static GetterDelegate MakeGetter(PropertyInfo prop)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static IEnumerable<Getter> MakeGetters(IEnumerable<PropertyInfo> properties)
         {
-            var paramThis = Expression.Parameter(typeof(object));
-            var paramRefObj = Expression.Parameter(typeof(InternalObject).MakeByRefType());
-            var type = prop.PropertyType;
-            // ReSharper disable once AssignNullToNotNullAttribute
-            var propExp = Expression.Property(Expression.Convert(paramThis, prop.DeclaringType), prop);
-            var numberField = FieldExp(paramRefObj, "Number");
-            var typeField = FieldExp(paramRefObj, "Type");
-            var stringField = FieldExp(paramRefObj, "String");
-            Expression body = Expression.Convert(propExp, typeof(object));
+            foreach (var property in properties)
+            {
+                var paramThis = Expression.Parameter(typeof(object));
+                var paramRefObj = Expression.Parameter(typeof(InternalObject).MakeByRefType());
+                var memberExp = Expression.Property(Expression.Convert(paramThis, property.DeclaringType), property);
+                var assignExp = AssignResult(memberExp, paramRefObj, property.PropertyType);
+                var body = assignExp == null
+                    ? Expression.Convert(memberExp, typeof(object))
+                    : (Expression)Expression.Block(assignExp, Expression.Constant(null));
+                yield return new Getter
+                {
+                    Name = property.Name,
+                    Invoke = Expression.Lambda<GetterDelegate>(body, paramThis, paramRefObj).Compile()
+                };
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static IEnumerable<Getter> MakeGetters(IEnumerable<FieldInfo> fields)
+        {
+            foreach (var field in fields)
+            {
+                var paramThis = Expression.Parameter(typeof(object));
+                var paramRefObj = Expression.Parameter(typeof(InternalObject).MakeByRefType());
+                var memberExp = Expression.Field(Expression.Convert(paramThis, field.DeclaringType), field);
+                var assignExp = AssignResult(memberExp, paramRefObj, field.FieldType);
+                var body = assignExp == null
+                    ? Expression.Convert(memberExp, typeof(object))
+                    : (Expression)Expression.Block(assignExp, Expression.Constant(null));
+                yield return new Getter
+                {
+                    Name = field.Name,
+                    Invoke = Expression.Lambda<GetterDelegate>(body, paramThis, paramRefObj).Compile()
+                };
+            }
+        }
+
+        private static Expression AssignResult(MemberExpression memberExp, ParameterExpression result, Type type)
+        {
+            var numberField = FieldExp(result, "Number");
+            var typeField = FieldExp(result, "Type");
+            var stringField = FieldExp(result, "String");
             switch (Type.GetTypeCode(type))
             {
                 case TypeCode.Boolean:
-                    body = ReturnNull(Expression.Assign(typeField,
-                        Expression.Condition(Expression.Convert(propExp, typeof(bool)),
-                            Expression.Constant(JsonType.True), Expression.Constant(JsonType.False))));
-                    break;
+                    return Expression.Assign(typeField,
+                        Expression.Condition(Expression.Convert(memberExp, typeof(bool)),
+                            Expression.Constant(JsonType.True), Expression.Constant(JsonType.False)));
                 case TypeCode.Int32:
-                    body = ReturnNull(Expression.Assign(numberField,
-                        Expression.Convert(propExp, typeof(double))));
-                    break;
                 case TypeCode.Single:
-                    body = ReturnNull(Expression.Assign(numberField,
-                        Expression.Convert(propExp, typeof(double))));
-                    break;
+                    return Expression.Assign(numberField, Expression.Convert(memberExp, typeof(double)));
                 case TypeCode.Double:
-                    body = ReturnNull(Expression.Assign(numberField, propExp));
-                    break;
+                    return Expression.Assign(numberField, memberExp);
                 case TypeCode.String:
-                    body = Expression.Condition(
-                        Expression.ReferenceEqual(propExp, Expression.Constant(null)),
-                        Expression.Constant(null),
+                    return Expression.IfThen(
+                        Expression.ReferenceNotEqual(memberExp, Expression.Constant(null)),
                         Expression.Block(
                             Expression.Assign(typeField, Expression.Constant(JsonType.String)),
-                            Expression.Assign(stringField, propExp),
-                            Expression.Constant(null)));
-                    break;
+                            Expression.Assign(stringField, memberExp)));
+                default:
+                    return null;
             }
-            return Expression.Lambda<GetterDelegate>(body, paramThis, paramRefObj).Compile();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Expression FieldExp(Expression obj, string name)
         {
             return Expression.Field(obj, typeof(InternalObject).GetField(name));
-        }
-
-        private static Expression ReturnNull(Expression lambda)
-        {
-            return Expression.Block(lambda, Expression.Constant(null));
         }
 
         public delegate object GetterDelegate(object target, ref InternalObject obj);
