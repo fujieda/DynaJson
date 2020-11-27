@@ -98,6 +98,7 @@ namespace DynaJson.Test
         {
             public string S { get; set; }
             public DateTime D { get; set; }
+            public double F;
         }
 
         private class Empty
@@ -124,6 +125,13 @@ namespace DynaJson.Test
         {
             var obj = (A)JsonObject.Parse(@"{}");
             Assert.IsInstanceOfType(obj, typeof(A));
+        }
+
+        [TestMethod]
+        public void ConverToPublicField()
+        {
+            var obj = (A)JsonObject.Parse(@"{""F"":1}");
+            Assert.AreEqual(1, obj.F);
         }
 
         [TestMethod]

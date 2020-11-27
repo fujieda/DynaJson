@@ -164,7 +164,14 @@ namespace DynaJson
 
         private static Setter[] CreateSetterList(Type type)
         {
-            return type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.CanWrite).Select(
+            return MakeSetters(type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                .Concat(MakeSetters(type.GetFields(BindingFlags.Public | BindingFlags.Instance))).ToArray();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static IEnumerable<Setter> MakeSetters(IEnumerable<PropertyInfo> properties)
+        {
+            return properties.Where(prop => prop.CanWrite).Select(
                 prop =>
                 {
                     var setter = new Setter
@@ -190,9 +197,42 @@ namespace DynaJson
                     }
                     setter.Invoke = MakeSetter(prop);
                     return setter;
-                }).ToArray();
+                });
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static IEnumerable<Setter> MakeSetters(IEnumerable<FieldInfo> fields)
+        {
+            return fields.Select(
+                field =>
+                {
+                    var setter = new Setter
+                    {
+                        Name = field.Name,
+                        Type = field.FieldType,
+                    };
+                    if (field.FieldType == typeof(bool))
+                    {
+                        setter.DirectInvoke = MakeDirectSetter(field, ExpGen.Bool);
+                        return setter;
+                    }
+                    if (field.FieldType == typeof(int) || field.FieldType == typeof(float) ||
+                        field.FieldType == typeof(double))
+                    {
+                        setter.DirectInvoke = MakeDirectSetter(field, ExpGen.Number);
+                        return setter;
+                    }
+                    if (field.FieldType == typeof(string))
+                    {
+                        setter.DirectInvoke = MakeDirectSetter(field, ExpGen.String);
+                        return setter;
+                    }
+                    setter.Invoke = MakeSetter(field);
+                    return setter;
+                });
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Action<object, object> MakeSetter(PropertyInfo prop)
         {
             var paramThis = Expression.Parameter(typeof(object));
@@ -201,6 +241,18 @@ namespace DynaJson
                 Expression.Assign(
                     Expression.Property(Expression.Convert(paramThis, prop.DeclaringType), prop),
                     Expression.Convert(paramObj, prop.PropertyType)),
+                paramThis, paramObj).Compile();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Action<object, object> MakeSetter(FieldInfo prop)
+        {
+            var paramThis = Expression.Parameter(typeof(object));
+            var paramObj = Expression.Parameter(typeof(object));
+            return Expression.Lambda<Action<object, object>>(
+                Expression.Assign(
+                    Expression.Field(Expression.Convert(paramThis, prop.DeclaringType), prop),
+                    Expression.Convert(paramObj, prop.FieldType)),
                 paramThis, paramObj).Compile();
         }
 
@@ -277,6 +329,7 @@ namespace DynaJson
         private static readonly MethodInfo ToValueMethod =
             typeof(JsonObject).GetMethod("ToValue", BindingFlags.Static | BindingFlags.NonPublic);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Expression ChangeTypeExp(ParameterExpression paramObj, Type type)
         {
             return Expression.Convert(
@@ -297,6 +350,20 @@ namespace DynaJson
                 paramThis, paramObj).Compile();
         }
 
+        private static Action<object, InternalObject> MakeDirectSetter(FieldInfo field, IExpGen expGen)
+        {
+            var paramThis = Expression.Parameter(typeof(object));
+            var paramObj = Expression.Parameter(typeof(InternalObject));
+            return Expression.Lambda<Action<object, InternalObject>>(
+                Expression.Assign(
+                    Expression.Field(Expression.Convert(paramThis, field.DeclaringType), field),
+                    Expression.Condition(expGen.CheckType(paramObj),
+                        expGen.GetValue(paramObj, field.FieldType),
+                        ChangeTypeExp(paramObj, field.FieldType))),
+                paramThis, paramObj).Compile();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Func<object> CreateObjectCreator(Type type)
         {
             return Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
