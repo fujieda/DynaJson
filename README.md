@@ -4,7 +4,7 @@ A fast and compact drop-in replacement of DynamicJson
 
 DynaJson is designed as a drop-in replacement of [DynamicJson](https://github.com/neuecc/DynamicJson).  You can intuitively manipulate JSON data through the dynamic type in the same way as DynamicJson. It is written from scratch and licensed under the MIT license instead of Ms-PL of DynamicJson.
 
-DynaJson can parse and serialize five times faster than DynamicJson. It has no recursive call to process deeply nested JSON data and no extra dependency except for Microsoft.CSharp for .Net Standard to reduce the package size of your applications.
+DynaJson can parse and serialize four times faster than DynamicJson. It has no recursive call to process deeply nested JSON data and no extra dependency except for Microsoft.CSharp for .Net Standard to reduce the package size of your applications.
 
 ## Usage
 
@@ -16,7 +16,7 @@ PM> Install-Package DynaJson
 
 The following examples are borrowed from DynamicJson.
 
-### Parsing
+### Parse
 
 ```csharp
 var json = JsonObject.Parse(@"{
@@ -26,7 +26,7 @@ var json = JsonObject.Parse(@"{
 }");
 ```
 
-### Accessing Objects
+### Access Objects
 
 ```csharp
 // Accessing object properties
@@ -34,9 +34,6 @@ var a1 = json.foo; // "json"
 var a2 = json.nest.foobar; // true
 // The same as above
 var a3 = json["nest"]["foobar"]; // bracket notation
-
-// Assignment
-json.foo = "aaa";
 
 // Check the specified property exists
 var b1 = json.IsDefined("foo"); // true
@@ -46,14 +43,11 @@ var b3 = json.foo(); // true
 var b4 = json.foooo(); // false
 ```
 
-### Accessing Arrays
+### Access Arrays
 
 ```csharp
 // Accessing array elements
 var a4 = json.bar[0]; // 100.0
-
-// Assignment
-json.bar[0] = 200;
 
 // Check array boundary
 var b5 = json.bar.IsDefined(1); // true
@@ -65,29 +59,89 @@ var len1 = json.bar.Length; // 2
 var len2 = json.bar.Count; // 2
 ```
 
-### Adding/Deleting Properties
+### Convert to C# types
 
 ```csharp
-// Add properties with C# objects
-json.Arr = new[] {"aaa", "bbb"}; // Array
-json.Obj = new {aaa = "abc", bbb = 100}; // Object
+// a JSON objects to a C# object
+public class FooBar
+{
+    public string foo { get; set; }
+    public int bar;
+}
+var jsonObject = JsonObject.Parse(@"{""foo"":""json"",""bar"":100}");
+var foobar = (FooBar)objectJson; // FooBar
+var c1 = foobar.bar; // 100
+// You can use the Deserialize method instead of type casting
+// var foobar = objectJson.Deserialize<FooBar>();
 
-// Delete the specified property
-var d1 = json.Delete("foo"); // true for success
-var d2 = json.Delete("foo"); // false for failure
-// object("name") works as object.Delete("name")
-var d3 = json("bar"); // true
+// to a C# dictionary
+var dict1 = (Dictionary<string, dynamic>)jsonObject;
+var c2 = dict1["bar"]; // 100
+
+// a JSON array to a C# array
+var jsonArray = JsonObject.Parse("[1,2,3]");
+var array = (int[])jsonArray; // int[]
+var sum1 = array.Sum(); // 6
+
+// to a C# list
+var list = (List<int>)jsonArray;
+var sum2 = list.Sum(); // 6
 ```
 
-### Deleting Array Elements
+### Serialize
 
 ```csharp
-// Deleting elements
-var e1 = json.Arr.Delete(0); // true for success
-var e2 = json.Arr[0]; // "bbb"
+var foobar = new[]
+{
+    new FooBar {foo = "fooooo!", bar = 1000},
+    new FooBar {foo = "orz", bar = 10}
+};
+var json1 = JsonObject.Serialize(foobar); // [{"foo":"fooooo!","bar":1000},{"foo":"orz","bar":10}]
+
+// Serialize a dictionary
+var dict = new Dictionary<string, int>
+{
+    {"aaa", 1},
+    {"bbb", 2}
+};
+var json2 = JsonObject.Serialize(dict); // {"aaa":1,"bbb":2}
+
+// Serialize an object created dynamically
+dynamic jsonObject = new JsonObject();
+jsonObject.str = "aaa";
+jsonObject.obj = new {foo = "bar"};
+var json3 = jsonObject.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
+```
+
+### Modify JSON objects
+
+```csharp
+dynamic jsonObject = new JsonObject(); // or JsonObject.Parse("{}");
+// Add properties
+jsonObject.str = "aaa"; // string
+jsonObject.obj = new {foo = "bar"}; // an object
+jsonObject.arr = new[] {"aaa", "bbb"}; // an array
+// Assign a new value
+jsonObject.str = "bbb";
+// Delete a specified property
+var d1 = jsonObject.Delete("str"); // true for success
+var d2 = jsonObject.Delete("str"); // false for failure
+// object("name") works as object.Delete("name")
+var d3 = jsonObject("obj"); // true
+```
+
+### Modify JSON Arrays
+
+```csharp
+dynamic jsonArray = new JsonObject(new[]{"aaa", "bbb"}); // or JsonObject.Parse(@"[""aaa"",""bbb""]");
+// Assign a new value
+jsonArray[0] = "ccc";
+// Delete elements
+var e1 = jsonArray.Delete(0); // true for success
+var e2 = jsonArray[0]; // "bbb"
 // array(index) works as array.Delete(index)
-var e3 = json.Arr(0); // true
-var len = json.Arr.Length; // 0 (DynaJson only)
+var e3 = jsonArray(0); // true
+var len = jsonArray.Length; // 0 (DynaJson only)
 ```
 
 ### Enumerate
@@ -95,72 +149,15 @@ var len = json.Arr.Length; // 0 (DynaJson only)
 ```csharp
 var arrayJson = JsonObject.Parse("[1,2,3]")
 var sum = 0;
-// 6
 foreach (int item in arrayJson)
     sum += item;
+// sum = 6
 
 var objectJson = JsonObject.Parse(@"{""foo"":""json"",""bar"":100}");
 var list = new List<string>();
-// ["foo:json","bar:100"]
 foreach (KeyValuePair<string, dynamic> item in objectJson)
     list.Add(item.Key + ":" + item.Value);
-```
-
-### Convert/Deserialize
-
-```csharp
-var array1 = arrayJson.Deserialize<int[]>(); // dynamic{int[]}
-var array2 = (int[])arrayJson; // int[]
-var sum2 = array2.Sum(); // 6
-var array3 = (List<int>)arrayJson; // List<int>
-
-public class FooBar
-{
-    public string foo { get; set; }
-    public int bar { get; set; }
-}
-var foobar1 = objectJson.Deserialize<FooBar>(); // dynamic{FooBar}
-var foobar2 = (FooBar)objectJson; // Foobar
-FooBar foobar3 = objectJson; // the same above
-```
-
-### Create Object and Serialize
-
-```csharp
-dynamic newJson1 = new JsonObject();
-newJson1.str = "aaa";
-newJson1.obj = new {foo = "bar"};
-var jsonStr1 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
-
-dynamic newJson2 = new JsonObject(new {str = "aaa"});
-newJson2.obj = new {foo = "bar"};
-var jsonStr2 = newJson1.ToString(); // {"str":"aaa","obj":{"foo":"bar"}}
-```
-
-### Serialize
-
-```csharp
-var obj = new
-{
-    Name = "Foo",
-    Age = 30,
-    Address = new
-    {
-        Country = "Japan",
-        City = "Tokyo"
-    },
-    Like = new[] {"Microsoft", "XBox"}
-};
-// {"Name":"Foo","Age":30,"Address":{"Country":"Japan","City":"Tokyo"},"Like":["Microsoft","XBox"]}
-var json1 = JsonObject.Serialize(obj);
-
-var foobar = new[]
-{
-    new FooBar {foo = "fooooo!", bar = 1000},
-    new FooBar {foo = "orz", bar = 10}
-};
-// [{"foo":"fooooo!","bar":1000},{"foo":"orz","bar":10}]
-var json2 = JsonObject.Serialize(foobar);
+// list = ["foo:json","bar:100"]
 ```
 
 ## Incompatibility with DynamicJson
@@ -237,7 +234,7 @@ The benchmark program in [the GitHub repository](https://github.com/fujieda/Dyna
 
 The following result shows the time to parse each JSON file except for citm_catalog.json.
 
-![benchmark-dynamic-parse2](https://user-images.githubusercontent.com/345831/95461724-89c23680-09b1-11eb-8785-d342013609c0.png)
+![benchmark-dynamic-parse](https://user-images.githubusercontent.com/345831/100993884-46430d80-3599-11eb-8f04-6bacaf922b33.png)
 
 DynaJson is considerably faster than other parsers.
 
@@ -245,17 +242,17 @@ DynaJson is considerably faster than other parsers.
 
 The following shows the time to serialize each result of parsing back to its string representation. It evaluates the throughput of serializing large objects.
 
-![benchmark-dynamic-serialize2](https://user-images.githubusercontent.com/345831/95464859-68fbe000-09b5-11eb-9db2-8e293723ab16.png)
+![benchmark-dynamic-serialize](https://user-images.githubusercontent.com/345831/100993970-683c9000-3599-11eb-9e82-cfe2648d924c.png)
 
 DynaJson is the fastest partially because it can serialize only the dynamic objects generated by its parser and provides no customization of string representations.
 
 #### Parse and serialize back citm_catalog.json
 
-![benchmakr-dynamic-citm](https://user-images.githubusercontent.com/345831/95582675-ed159c80-0a75-11eb-84df-d8ad89bd65f8.png)
+![benchmark-dynamic-citm](https://user-images.githubusercontent.com/345831/100994066-899d7c00-3599-11eb-9c6e-fd93000bc634.png)
 
 ## Benchmark for user-defined types
 
-DynaJson can serialize and deserialize only its own dynamic objects. It, however, has a converter between dynamic objects and values of user-defined types. When DynaJson serializes a value, it converts this to a dynamic object first. Although it has an inherent overhead, the performance is comparable to others.
+DynaJson can serialize and deserialize only `JsonObject`. DynaJson, however, has a converter between `JsonObject` and user-defined types. When DynaJson serializes a value, it converts the value to a `JsonObject` first. Although it has an inherent overhead, the performance is comparable to others.
 
 ### User-defined types
 
@@ -288,17 +285,17 @@ DynaJson can serialize and deserialize only its own dynamic objects. It, however
 
 #### Serialize
 
-![benchmark-static-serialize](https://user-images.githubusercontent.com/345831/95708649-c931a100-0c97-11eb-813a-6bacbcc91ecf.png)
+![benchmark-static-serialize](https://user-images.githubusercontent.com/345831/101001865-06812380-35a3-11eb-86fa-f20d5a5ac640.png)
 
 #### Deserialize
 
-![benchmark-static-deserialize](https://user-images.githubusercontent.com/345831/95708703-e49cac00-0c97-11eb-8143-8582bcab02f6.png)
+![benchmark-static-deserialize](https://user-images.githubusercontent.com/345831/101001979-2c0e2d00-35a3-11eb-8c33-031047754788.png)
 
 ## Why fast
 
 - Avoid method invocations by inlining aggressively
 - Self-implement Dictionary, List, Enumerator to inline these methods
 - Pack a JSON value in a 16 bytes struct with NaN boxing
-- Use own double-to-string converter to directly write the result into the output buffer (same as Utf8Json)
+- Use own double-to-string converter to directly write the result into the output buffer (the same as Utf8Json)
 - Use runtime code generation to make reflective operations faster
 - Cover only a minimum set of features so far
