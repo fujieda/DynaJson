@@ -187,7 +187,7 @@ The following libraries support the dynamic type to access parsed JSON data. Utf
 
 Name                      |Version|Size (bytes)|
 --------------------------|-------|-----------:|
-DynaJson                  |2.1    |35,238      |
+DynaJson                  |2.2    |45,056      |
 [Utf8Json][Utf8Json]      |1.3.7  |237,568     |
 [Jil][Jil]                |2.17.0 |755,712     |
 [Newtonsoft.Json][Nt.Json]|12.0.3 |693,680     |
