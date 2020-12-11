@@ -1,5 +1,7 @@
 # DynaJson
 
+![Nuget](https://img.shields.io/nuget/v/DynaJson)
+
 A fast and compact drop-in replacement of DynamicJson
 
 DynaJson is designed as a drop-in replacement of [DynamicJson](https://github.com/neuecc/DynamicJson).  You can intuitively manipulate JSON data through the dynamic type in the same way as DynamicJson. It is written from scratch and licensed under the MIT license instead of Ms-PL of DynamicJson.
